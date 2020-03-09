@@ -25,5 +25,8 @@ $ dmesg | tail
 [140915.895137] sd 6:0:0:0: [sdb] Assuming drive cache: write through
 [140915.900535]  sdb:
 [140915.904123] sd 6:0:0:0: [sdb] Attached SCSI removable disk
-
+```
+От имени root-а запустите скрипт install.sh, указав при этом путь до устройства флэшки ("/dev/sdb"):
+```bash
+# sudo ./install.sh /dev/sdb
 ```
