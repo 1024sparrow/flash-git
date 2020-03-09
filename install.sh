@@ -1,46 +1,57 @@
 #!/bin/bash
 
-if [[ ! -b $1 ]]
-then
-	echo Please specify a device to set as your repository carrier
-	exit 1
-fi
-
-if [[ ! -r $2 ]]
-then
-	echo Prease specify file with repositories list
-	exit 1
-fi
-
 if [ ! $(id -u) -eq 0 ]
 then
     echo Run this under ROOT only!
     exit 1
 fi
 
-echo > /usr/share/flash-git/hardware
-for i in "E: ID_VENDOR_ID=" "E: ID_MODEL_ID=" "E: DEVTYPE=" "E: ID_SERIAL="
-do
-var=$(udevadm info --export --name $1 | grep "$i")
-echo ${i:3}${var:${#i}} >> /usr/share/flash-git/hardware
-done
+if [[ ! -b $1 ]]
+then
+	echo Please specify a device to set as your repository carrier
+	exit 1
+fi
 
-source /usr/share/flash-git/hardware
-echo $ID_SERIAL
+hostid=$(hostid)
+
+if [[ -r $2 ]]
+then
+	mkdir /usr/share/flash-git
+	echo > /usr/share/flash-git/hardware
+	for i in "E: ID_VENDOR_ID=" "E: ID_MODEL_ID=" "E: DEVTYPE=" "E: ID_SERIAL="
+	do
+		var=$(udevadm info --export --name $1 | grep "$i")
+		echo ${i:3}${var:${#i}} >> /usr/share/flash-git/hardware
+	done
+
+	source /usr/share/flash-git/hardware
+	echo $ID_SERIAL
 
 
-rm -rf root
-mkdir root
-for i in $(cat $2)
-do
-	echo $i
-	git clone --bare --shared "$i"/.git root/$(basename $i).git
-done
-cp -L $2 root/repos
+	rm -rf root
+	mkdir root
+	for i in $(cat $2)
+	do
+		echo $i
+		git clone --bare --shared "$i"/.git root/$(basename $i).git
+	done
+	cp -L $2 root/repos
+	echo $hostid > root/hosts
 
-mkfs.ext4 $1 -d root && echo OK || echo FAILED
-rm -rf root
-echo FINISHED
+	mkfs.ext4 $1 -d root && echo OK || echo FAILED
+	rm -rf root
+	echo FINISHED
+
+else
+	# echo Prease specify file with repositories list
+	echo not implemented
+	rm -rf root
+	mkdir root
+	mount $1 root
+	hosts=$(cat root/hosts) # boris here
+	umount root
+	exit 1
+fi
 
 
 #mkdir /usr/share/flash-git
