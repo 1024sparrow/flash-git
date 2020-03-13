@@ -33,23 +33,62 @@ then
 	for i in $(cat $2)
 	do
 		echo $i
-		git clone --bare --shared "$i"/.git root/$(basename $i).git
+		git init --bare root/$(basename $i) # boris here: init, remote add, git push
+
+		git clone --bare --shared "$i" $(pwd)/root/$(basename $i).git # boris here: ... instead of this
+		git remote add flash_git $(pwd)/root/$(basename $i).git
 	done
 	cp -L $2 root/repos
 	echo $hostid > root/hosts
 
-	mkfs.ext4 $1 -d root && echo OK || echo FAILED
-	rm -rf root
+	#mkfs.ext4 $1 -d root && echo OK || echo FAILED
+	#rm -rf root
 	echo FINISHED
 
 else
 	# echo Prease specify file with repositories list
-	echo not implemented
-	rm -rf root
-	mkdir root
-	mount $1 root
-	hosts=$(cat root/hosts) # boris here
-	umount root
+	#rm -rf root
+	#mkdir root
+	#mount $1 root
+	if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
+	then
+		echo "reinitializing? Rejected."
+		#exit 1
+
+		#while read -r line
+		#do
+		#	echo "$line:"
+		#	if [ -d "$line" ]
+		#	then
+		#		pushd "$line"
+		#			git pull flash-git && echo "pulled" || echo "NOT pulled"
+		#			git push flash-git && echo "pushed" || echo "NOT pushed"
+		#		popd
+		#	else
+		#		echo "repository '$line' not found. Passing."
+		#	fi
+		#done < root/repos
+	fi
+
+	echo "TODO: print error if any from list already existen; create paths to repos and pull from flash-drive"
+	while read -r line
+	do
+		echo "===="
+		echo "$line":
+		if [ -d "$line" ]
+		then
+			echo "Path '$line' already existen. FAILED."
+			exit 1
+		fi
+		#mkdir -p $line
+		git clone -b master $(pwd)/root/$(basename $line).git $line
+	done < root/repos
+	#echo $hostid >> root/hosts
+
+
+
+	#umount root
+	#rm -rf root
 	exit 1
 fi
 
