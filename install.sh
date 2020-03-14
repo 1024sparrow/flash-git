@@ -21,6 +21,7 @@ normal=`tput sgr0`
 
 if [[ -r $2 ]]
 then
+	rm -rf /usr/share/flash-git
 	mkdir /usr/share/flash-git
 	echo > /usr/share/flash-git/hardware
 	for i in "E: ID_VENDOR_ID=" "E: ID_MODEL_ID=" "E: DEVTYPE=" "E: ID_SERIAL="
@@ -95,10 +96,7 @@ else
 fi
 
 
-#mkdir /usr/share/flash-git
-#echo "${target_hardware}" > /usr/share/flash-git/hardware
 
-#echo "${target_hardware}"
 #a=$(udevadm info --export --name $1)
 #b=$(cat /usr/share/flash-git/hardware)
 #if [[ "$a" == "$b" ]]
@@ -109,17 +107,18 @@ fi
 #fi
 
 # ==========================================
+
+mediaPath=$(pwd)/root
+
+echo "#!/bin/bash
+" > /usr/local/bin/flash-git__add.sh
+
 #echo "#!/bin/bash
 
-#mkdir /mnt/flash-git
-#" > /usr/local/bin/flash-git__add.sh
+echo "#!/bin/bash
+" > /usr/local/bin/flash-git__remove.sh
 
-#echo "#!/bin/bash
+chmod +x /usr/local/bin/flash-git__{add,remove}.sh
 
-#rm -rf /mnt/flash-git
-#" > /usr/local/bin/flash-git__remove.sh
-
-#chmod +x /usr/local/bin/flash-git__{add,remove}.sh
-
-#echo "ACTION=="add" KERNEL=="sd[b-z]*" RUN+="/usr/bin/flash-git__add.sh"
-#" > /etc/udev/rules.d/flash-git.rules
+echo 'ACTION=="add" KERNEL=="sd[b-z]*" RUN+="/usr/bin/flash-git__add.sh"
+' > /etc/udev/rules.d/flash-git.rules
