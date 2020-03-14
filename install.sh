@@ -14,6 +14,11 @@ fi
 
 hostid=$(hostid)
 
+underline=`tput smul`
+nounderline=`tput rmul`
+bold=`tput bold`
+normal=`tput sgr0`
+
 if [[ -r $2 ]]
 then
 	mkdir /usr/share/flash-git
@@ -33,10 +38,20 @@ then
 	for i in $(cat $2)
 	do
 		echo $i
-		git init --bare root/$(basename $i) # boris here: init, remote add, git push
+		repopath=$(pwd)/root/$(basename $i).git
+		git init --bare "$repopath" # boris here: init, remote add, git push
+		pushd $i
+		git remote remove flash-git
+		git remote add flash-git "$repopath"
+		for branch in $(git branch | cut -c 3-)
+		do
+			git push --set-upstream flash-git "$branch"
+		done
+		git push flash-git
+		popd
 
-		git clone --bare --shared "$i" $(pwd)/root/$(basename $i).git # boris here: ... instead of this
-		git remote add flash_git $(pwd)/root/$(basename $i).git
+		#git clone --bare --shared "$i" $(pwd)/root/$(basename $i).git # boris here: ... instead of this
+		#git remote add flash_git $(pwd)/root/$(basename $i).git
 	done
 	cp -L $2 root/repos
 	echo $hostid > root/hosts
@@ -73,17 +88,21 @@ else
 	echo "TODO: print error if any from list already existen; create paths to repos and pull from flash-drive"
 	while read -r line
 	do
-		echo "===="
-		echo "$line":
+		echo "${underline}${line}${nounderline}":
 		if [ -d "$line" ]
 		then
 			echo "Path '$line' already existen. FAILED."
 			exit 1
 		fi
-		#mkdir -p $line
-		git clone -b master $(pwd)/root/$(basename $line).git $line
+		mkdir -p $line
+		repopath=$(pwd)/root/$(basename $line).git
+		git clone "$repopath" $line
+		pushd "$line"
+		git remote rename origin flash-git
+		popd
+		chown -R boris "$line"
 	done < root/repos
-	#echo $hostid >> root/hosts
+	echo $hostid >> root/hosts
 
 
 
