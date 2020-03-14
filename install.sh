@@ -51,7 +51,7 @@ then
 		git push flash-git
 		popd
 	done
-	cp -L $2 root/repos
+	cp -L $2 root/repos # dereferencing if it's a symbolyc link
 	echo $hostid > root/hosts
 
 	mkfs.ext4 $1 -d root && echo OK || echo FAILED
