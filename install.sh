@@ -49,40 +49,23 @@ then
 		done
 		git push flash-git
 		popd
-
-		#git clone --bare --shared "$i" $(pwd)/root/$(basename $i).git # boris here: ... instead of this
-		#git remote add flash_git $(pwd)/root/$(basename $i).git
 	done
 	cp -L $2 root/repos
 	echo $hostid > root/hosts
 
-	#mkfs.ext4 $1 -d root && echo OK || echo FAILED
-	#rm -rf root
+	mkfs.ext4 $1 -d root && echo OK || echo FAILED
+	rm -rf root
 	echo FINISHED
 
 else
 	# echo Prease specify file with repositories list
-	#rm -rf root
-	#mkdir root
-	#mount $1 root
+	rm -rf root
+	mkdir root
+	mount $1 root
 	if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
 	then
 		echo "reinitializing? Rejected."
 		#exit 1
-
-		#while read -r line
-		#do
-		#	echo "$line:"
-		#	if [ -d "$line" ]
-		#	then
-		#		pushd "$line"
-		#			git pull flash-git && echo "pulled" || echo "NOT pulled"
-		#			git push flash-git && echo "pushed" || echo "NOT pushed"
-		#		popd
-		#	else
-		#		echo "repository '$line' not found. Passing."
-		#	fi
-		#done < root/repos
 	fi
 
 	echo "TODO: print error if any from list already existen; create paths to repos and pull from flash-drive"
@@ -106,8 +89,8 @@ else
 
 
 
-	#umount root
-	#rm -rf root
+	umount root
+	rm -rf root
 	exit 1
 fi
 
