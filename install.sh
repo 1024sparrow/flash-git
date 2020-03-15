@@ -40,7 +40,7 @@ then
 	do
 		echo $i
 		repopath=$(pwd)/root/$(basename $i).git
-		git init --bare "$repopath" # boris here: init, remote add, git push
+		git init --bare "$repopath"
 		pushd $i
 		git remote remove flash-git
 		git remote add flash-git "$repopath"
@@ -99,15 +99,43 @@ mediaPath=$(pwd)/root
 
 echo "#!/bin/bash
 
+if [ ! $(id -u) -eq 0 ]
+then
+    echo Run this under ROOT only!
+    exit 1
+fi
+
+if [[ ! -b $1 ]]
+then
+	echo Please specify a device to set as your repository carrier
+	exit 1
+fi
+
 rm -rf /mnt/flash-git
 mkdir /mnt/flash-git
-echo $1 > /mnt/flash-git/1
-echo $2 > /mnt/flash-git/2
+echo /dev/sdb > /mnt/flash-git/1
+echo my-repositories > /mnt/flash-git/2
+
+r=/home/boris/opt/flash-git
+pushd $r
+rm -rf root
+mkdir root
+mount $1 root
+for oRepo in $(cat root/repos)
+do
+	echo "repo: " $oRepo
+	pushd $oRepo
+	git pull flash-git
+	git push flash-git
+	git pull flash-git
+	popd
+done
+umount root
+rm -rf root
+popd
 " > /usr/local/bin/flash-git__add.sh
 
 echo "#!/bin/bash
-
-rm -rf /mnt/flash-git
 " > /usr/local/bin/flash-git__remove.sh
 
 chmod +x /usr/local/bin/flash-git__{add,remove}.sh
