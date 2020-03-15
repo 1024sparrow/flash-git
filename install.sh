@@ -23,11 +23,11 @@ if [[ -r $2 ]]
 then
 	rm -rf /usr/share/flash-git
 	mkdir /usr/share/flash-git
-	echo > /usr/share/flash-git/hardware
-	for i in "E: ID_VENDOR_ID=" "E: ID_MODEL_ID=" "E: DEVTYPE=" "E: ID_SERIAL="
+	echo -n > /usr/share/flash-git/hardware
+	for i in idVendor idProduct serial product manufacturer
 	do
-		var=$(udevadm info --export --name $1 | grep "$i")
-		echo ${i:3}${var:${#i}} >> /usr/share/flash-git/hardware
+		var=$(udevadm info -a -n sdb | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
+		echo ID_$i=$var >> /usr/share/flash-git/hardware
 	done
 
 	source /usr/share/flash-git/hardware
@@ -95,30 +95,25 @@ else
 	exit 1
 fi
 
-
-
-#a=$(udevadm info --export --name $1)
-#b=$(cat /usr/share/flash-git/hardware)
-#if [[ "$a" == "$b" ]]
-#then
-#	echo true
-#else
-#	echo false
-#fi
-
-# ==========================================
-
 mediaPath=$(pwd)/root
 
 echo "#!/bin/bash
+
+rm -rf /mnt/flash-git
+mkdir /mnt/flash-git
+echo $1 > /mnt/flash-git/1
+echo $2 > /mnt/flash-git/2
 " > /usr/local/bin/flash-git__add.sh
 
-#echo "#!/bin/bash
-
 echo "#!/bin/bash
+
+rm -rf /mnt/flash-git
 " > /usr/local/bin/flash-git__remove.sh
 
 chmod +x /usr/local/bin/flash-git__{add,remove}.sh
 
-echo 'ACTION=="add" KERNEL=="sd[b-z]*" RUN+="/usr/bin/flash-git__add.sh"
-' > /etc/udev/rules.d/flash-git.rules
+#echo "KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"090c\", ATTRS{idProduct}==\"1000\", ATTRS{serial}==\"1306030911800573\", ATTRS{product}==\"Silicon-Power4G\", ATTRS{manufacturer}==\"UFD 2.0\", RUN+=\"/usr/local/bin/flash-git__add.sh /dev/%k%n\"" > /etc/udev/rules.d/flash-git.rules
+
+echo "KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"ID_manufacturer\", RUN+=\"/usr/local/bin/flash-git__add.sh /dev/%k%n\"" > /etc/udev/rules.d/10-flash-git.rules
+
+udevadm control --reload-rules && udevadm trigger
