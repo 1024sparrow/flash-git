@@ -1,5 +1,40 @@
 #!/bin/bash
 
+underline=`tput smul`
+nounderline=`tput rmul`
+bold=`tput bold`
+normal=`tput sgr0`
+
+for i in $*
+do
+	if [[ "$i" == "--help" || $i == "-h" ]]
+	then
+		echo "
+Утилита для настройки автоматической синхронизации локальных репозиториев (на разных компьютерах) через флешку.
+
+${underline}Инициализация флешки по локальным репозиториям:${nounderline}
+* У локальных репозиториев прописывается флешка как дополнительный удалённый репозиторий, куда/откуда могут делаться делается push/pull (если эти репозитории были откуда-то стянуты, их origin остаётся на месте - все pull-push будут успешно проходить по-умолчанию туда, куда раньше проходили)
+* В системе прописывается udev-правило на подключение КОНКРЕТНО ЭТОЙ флешки, что при её физическом подключении происходит
+   * её автоматическое монтирование;
+   * для всех указанных при инициализации репозиториев выполняется git pull;git push на флешку (см. более подробное описание этой процедуры ниже);
+   * размонтирование флешки.
+* На флешку записываются
+   * список путей до локальных репозиториев, подлежащих синхронизации через эту флешку
+   * Расшаренные клоны локальных репозиториев, на которые теперь можно делать pull/push
+   * Уникальный идентификатор хоста - это для идентификации системой попытки повторно проинициализировать флешку
+
+Порядок инициализации:
+* составьте файл со списком путей до локальных репозиториев. Обозначим путь до этого файла как <путь_A>
+* вставьте флешку (не монтируйте), определите файл её устройства (что-то вроде /dev/sdb)
+* запустите от имени суперпользователя данный скрипт со следующими аргументами:
+\$sudo ./install.sh <ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> <путь_А>
+
+${underline}Инициализация локальных репозиториев по флешке:${nounderline}
+"
+		exit 0
+	fi
+done
+
 if [ ! $(id -u) -eq 0 ]
 then
     echo Run this under ROOT only!
@@ -14,11 +49,6 @@ fi
 
 hostid=$(hostid)
 
-underline=`tput smul`
-nounderline=`tput rmul`
-bold=`tput bold`
-normal=`tput sgr0`
-
 if [[ -r $2 ]]
 then
 	rm -rf /usr/share/flash-git
@@ -26,7 +56,7 @@ then
 	echo -n > /usr/share/flash-git/hardware
 	for i in idVendor idProduct serial product manufacturer
 	do
-		var=$(udevadm info -a -n sdb | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
+		var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
 		echo ID_$i=$var >> /usr/share/flash-git/hardware
 	done
 
@@ -40,7 +70,7 @@ then
 	do
 		echo $i
 		repopath=$(pwd)/root/$(basename $i).git
-		git init --bare "$repopath"
+		git init --bare --shared=true "$repopath"
 		pushd $i
 		git remote remove flash-git
 		git remote add flash-git "$repopath"
@@ -85,6 +115,7 @@ else
 		git remote rename origin flash-git
 		popd
 		chown -R boris "$line"
+		chgrp -R boris "$line"
 	done < root/repos
 	echo $hostid >> root/hosts
 
@@ -111,12 +142,8 @@ then
 	exit 1
 fi
 
-rm -rf /mnt/flash-git
-mkdir /mnt/flash-git
-echo /dev/sdb > /mnt/flash-git/1
-echo my-repositories > /mnt/flash-git/2
-
-r=/home/boris/opt/flash-git
+#r=/home/boris/opt/flash-git
+r=$(mktemp -d)
 pushd $r
 rm -rf root
 mkdir root
