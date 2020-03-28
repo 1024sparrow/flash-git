@@ -1,9 +1,9 @@
 #!/bin/bash
 
-underline=`tput smul`
-nounderline=`tput rmul`
-bold=`tput bold`
-normal=`tput sgr0`
+#underline=`tput smul`
+#nounderline=`tput rmul`
+#bold=`tput bold`
+#normal=`tput sgr0`
 
 for i in $*
 do
@@ -75,6 +75,69 @@ then
     echo Run this under ROOT only!
     exit 1
 fi
+
+argSandbox=
+argFakeinsert=
+argFakeRelease=
+argUser=
+argGroup=
+argRepoList=
+
+function checkArgSandbox {
+    echo checkSandbox
+}
+
+function checkArgFakeInsert {
+    echo checkArgFakeInsert
+}
+
+function checkArgFakeRelease {
+    echo checkArgFakeRelease
+}
+
+function checkArgUser {
+    echo checkArgUser
+}
+
+function checkArgGroup {
+    echo checkArgGroup
+}
+
+function checkArgRepoList {
+    echo checkArgRepoList
+}
+
+for i in $*
+do
+    echo $i
+    if [[ ${i:0:10} == "--sandbox=" ]]
+    then
+        argSandbox="${i:10}"
+        checkArgSandbox argSandbox
+    elif [[ ${i:0:14} == "--fake-insert=" ]]
+    then
+        argFakeinsert="${i:14}"
+    elif [[ ${i:0:15} == "--fake-release=" ]]
+    then
+        argFakeRelease="${i:15}"
+    elif [[ ${i:0:7} == "--user=" ]]
+    then
+        argUser="${i:7}"
+    elif [[ ${i:0:8} == "--group=" ]]
+    then
+        argGroup="${i:8}"
+    elif [[ ${i:0:12} == "--repo-list=" ]]
+    then
+        argRepoList="${i:12}"
+    else
+        echo "unexpected argument: $i
+Call \"./install.sh --help\" for details"
+        exit 1
+    fi
+done
+
+echo "NOT IMPLEMENTED"
+exit 0
 
 if [[ ! -b $1 ]]
 then
