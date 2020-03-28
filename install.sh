@@ -90,22 +90,32 @@ function checkArgSandbox {
         echo "Not such directory: $1"
         exit 1
     fi
+    if [ ! -r "$1"/hostid ]
+    then
+        echo "Directory \"$1\" does not present a sandbox"
+        exit 1
+    fi
 }
 
-function checkArgFakeInsert {
+function checkFakeMedia {
     echo checkArgFakeInsert
 }
 
-function checkArgFakeRelease {
-    echo checkArgFakeRelease
-}
-
 function checkArgUser {
-    echo checkArgUser
+    if [ "$(grep -c "^$1:" /etc/passwd)" -eq 0 ]
+    then
+        echo "there is not such user: $1"
+        exit 1
+    fi
 }
 
 function checkArgGroup {
     echo checkArgGroup
+    if [ "$(grep -c "^$1:" /etc/group)" -eq 0 ]
+    then
+        echo "there is not such group: $1"
+        exit 1
+    fi
 }
 
 function checkArgRepoList {
@@ -122,18 +132,23 @@ do
     elif [[ ${i:0:14} == "--fake-insert=" ]]
     then
         argFakeinsert="${i:14}"
+        checkFakeMedia "$argFakeinsert"
     elif [[ ${i:0:15} == "--fake-release=" ]]
     then
         argFakeRelease="${i:15}"
+        checkFakeMedia "$argFakeRelease"
     elif [[ ${i:0:7} == "--user=" ]]
     then
         argUser="${i:7}"
+        checkArgUser "$argUser"
     elif [[ ${i:0:8} == "--group=" ]]
     then
         argGroup="${i:8}"
+        checkArgGroup "$argGroup"
     elif [[ ${i:0:12} == "--repo-list=" ]]
     then
         argRepoList="${i:12}"
+        checkArgRepoList "$argRepoList"
     else
         echo "unexpected argument: $i
 Call \"./install.sh --help\" for details"
