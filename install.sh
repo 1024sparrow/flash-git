@@ -12,6 +12,22 @@ do
 		echo "
 Утилита для настройки автоматической синхронизации локальных git-репозиториев (на разных компьютерах) через флешку.
 
+USAGE:
+
+  get help:
+  $ ./install.sh --help
+  no matter if in addon to "--help" would be any other arguments - they will be ignored
+
+  initialize local repositories by media:
+  $ ./install.sh --device=<DEVICE> --repo-list=<REPO_LIST>
+  $ ./install.sh --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --sandbox=<SANDBOX>
+
+  initialize media by local repositories:
+  $ ./install.sh --device=<DEVICE> --user=<USER> --group=<GROUP>
+  $ ./install.sh --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
+
+
+
 ${underline}Инициализация флешки по локальным репозиториям:${nounderline}
 
 * У локальных репозиториев прописывается флешка как дополнительный удалённый репозиторий, куда/откуда могут делаться делается push/pull (если эти репозитории были откуда-то стянуты, их origin остаётся на месте - все pull-push будут успешно проходить по-умолчанию туда, куда раньше проходили)
@@ -83,6 +99,7 @@ fi
 #argGroup=
 #argRepoList=
 #argDevice
+#argFakeDevice
 
 function checkArgSandbox {
     if [ ! -d "$1" ]
@@ -181,6 +198,10 @@ do
     then
         argDevice="${i:9}"
         checkMediaDevice "$argDevice"
+    elif [[ ${i:0:14} == "--fake-device=" ]]
+    then
+        argFakeDevice="${i:14}"
+        checkFakeMedia "argFakeDevice"
     else
         echo "unexpected argument: $i
 Call \"./install.sh --help\" for details"
