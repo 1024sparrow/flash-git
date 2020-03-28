@@ -84,7 +84,12 @@ argGroup=
 argRepoList=
 
 function checkArgSandbox {
-    echo checkSandbox
+    #echo checkSandbox
+    if [ ! -d "$1" ]
+    then
+        echo "Not such directory: $1"
+        exit 1
+    fi
 }
 
 function checkArgFakeInsert {
@@ -113,7 +118,7 @@ do
     if [[ ${i:0:10} == "--sandbox=" ]]
     then
         argSandbox="${i:10}"
-        checkArgSandbox argSandbox
+        checkArgSandbox "$argSandbox"
     elif [[ ${i:0:14} == "--fake-insert=" ]]
     then
         argFakeinsert="${i:14}"
