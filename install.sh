@@ -85,7 +85,6 @@ fi
 #argDevice
 
 function checkArgSandbox {
-    #echo checkSandbox
     if [ ! -d "$1" ]
     then
         echo "Not such directory: $1"
@@ -100,6 +99,11 @@ function checkArgSandbox {
 
 function checkFakeMedia {
     echo checkArgFakeInsert
+    if [ ! -r "$1"/hardware ]
+    then
+        echo "\"$1\" is not a fake media"
+        exit 1
+    fi
 }
 
 function checkArgUser {
@@ -120,6 +124,22 @@ function checkArgGroup {
 
 function checkArgRepoList {
     echo checkArgRepoList
+    if [ ! -r "$1" ]
+    then
+        echo "Repositories list \"$1\": file not found"
+        exit 1
+    fi
+    for i in $(cat "$1")
+    do
+        if [ ! -d $i ]
+        then
+            echo "repository not found: $i"
+            exit 1
+        fi
+        pushd
+        git status &> /dev/null || (echo "directory \"$i\" not initialized as git-repository"; exit 1)
+        popd
+    done
 }
 
 function checkMediaDevice {
