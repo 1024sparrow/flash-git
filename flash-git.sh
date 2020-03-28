@@ -284,6 +284,21 @@ Call \"./flash-git.git --help\" for details"
     fi
 done
 
+for i in \
+    argFakeinsert \
+    argFakeRelease \
+    argCreateFakeDevice \
+    argShowFakeDevice \
+    argListFakeDevices \
+    argRemoveFakeDevice \
+    argCreateSandbox \
+    argShowSandbox \
+    argListSandboxes \
+    argRemoveSandbox
+do
+    echo "* $i"
+done
+
 #if [ ! -z $argUser ] && []
 #then
 #    echo "user set"
