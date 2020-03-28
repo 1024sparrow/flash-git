@@ -15,16 +15,26 @@ do
 USAGE:
 
   get help:
-  $ ./install.sh --help
+  $ ./flash-git.git --help
   no matter if in addon to "--help" would be any other arguments - they will be ignored
 
   initialize local repositories by media:
-  $ ./install.sh --device=<DEVICE> --repo-list=<REPO_LIST>
-  $ ./install.sh --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --sandbox=<SANDBOX>
+  $ ./flash-git.git --device=<DEVICE> --repo-list=<REPO_LIST>
+  $ ./flash-git.git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --sandbox=<SANDBOX>
 
   initialize media by local repositories:
-  $ ./install.sh --device=<DEVICE> --user=<USER> --group=<GROUP>
-  $ ./install.sh --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
+  $ ./flash-git.git --device=<DEVICE> --user=<USER> --group=<GROUP>
+  $ ./flash-git.git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
+
+  create fake device:
+  $ ./flash-git.git --create-fake-device=<FAKE_DEVICE>
+  $ ./flash-git.git --show-fake-device=<FAKE_DEVICE>
+  $ ./flash-git.git --create-sandbox=<SANDBOX>
+  $ ./flash-git.git --show-sandbox=<SANDBOX>
+  $ ./flash-git.git --list-fake-devices
+  $ ./flash-git.git --list-sandboxes
+  $ ./flash-git.git --remove-fake-device=<FAKE_DEVICE>
+  $ ./flash-git.git --remove-sandbox=<SANDBOX>
 
 
 
@@ -45,7 +55,7 @@ ${underline}Инициализация флешки по локальным ре
 * вставьте флешку (не монтируйте), определите файл её устройства (что-то вроде /dev/sdb)
 * запустите от имени суперпользователя данный скрипт со следующими аргументами:
 
-\$sudo ./install.sh --device=<ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --repo-list=<путь_А>
+\$sudo ./flash-git.git --device=<ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --repo-list=<путь_А>
 
 ${underline}Инициализация локальных репозиториев по флешке:${nounderline}
 
@@ -63,7 +73,7 @@ ${underline}Инициализация локальных репозиторие
 * вставьте флешку (не монтируйте), определите файл её устройства (что-то вроде /dev/sdb)
 * запустите от имени суперпользователя данный скрипт со следующими аргументами:
 
-\$sudo ./install.sh --device=<ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --user=\$USER --group=\$USER
+\$sudo ./flash-git.git --device=<ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --user=\$USER --group=\$USER
 
 ${underline}Дополнительные аргументы для отладки${nounderline}
 
@@ -76,11 +86,35 @@ ${underline}Дополнительные аргументы для отладк�
 --sandbox=<ПЕСОЧНИЦА>
 	В указанной выше директории должен находиться файл ${bold}hostid${normal} с фейковым идентификатором хоста
 
---fake-insert <СНИМОК_ФЛЕШКИ>
+--fake-insert=<СНИМОК_ФЛЕШКИ>
 	Проиграть имитацию того, что была вставлена флешка
 
---fake-release <СНИМОК_ФЛЕШКИ>
+--fake-release=<СНИМОК_ФЛЕШКИ>
 	Проиграть имитацию того, что флешка была извлечена (аппаратно)
+
+--create-fake-device=<FAKE_DEVICE>
+    create and initialize directory that can be in future pointed as fake device
+
+--show-fake-device=<FAKE_DEVICE>
+    show info about pointed fake device
+
+--create-sandbox=<SANDBOX>
+    create and initialize directory that can be in future pointed as a sandbox
+
+--show-sandbox=<SANDBOX>
+    show info about pointed sandbox
+
+--list-fake-devices
+    list all fake-devices names
+
+--list-sandboxes
+    list all sandboxes names
+
+--remove-fake-device=<FAKE_DEVICE>
+    remove fake device
+
+--remove-sandbox=<SANDBOX>
+    remove sandbox
 "
 		exit 0
 	fi
@@ -100,6 +134,7 @@ fi
 #argRepoList=
 #argDevice
 #argFakeDevice
+#argCreateFakeDevice
 
 function checkArgSandbox {
     if [ ! -d "$1" ]
@@ -167,6 +202,14 @@ function checkMediaDevice {
     fi
 }
 
+function checkCreateFakeDevice {
+    if [ -d "$1" ]
+    then
+        echo "can not create fake device: such directory already exist"
+        exit 1
+    fi
+}
+
 for i in $*
 do
     echo $i
@@ -202,9 +245,13 @@ do
     then
         argFakeDevice="${i:14}"
         checkFakeMedia "argFakeDevice"
+    elif [[ ${i:0:21} == "--create-fake-device=" ]]
+    then
+        argFakeDevice="${i:21}"
+        checkCreateFakeDevice "$argFakeDevice"
     else
         echo "unexpected argument: $i
-Call \"./install.sh --help\" for details"
+Call \"./flash-git.git --help\" for details"
         exit 1
     fi
 done
