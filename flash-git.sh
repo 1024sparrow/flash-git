@@ -126,15 +126,22 @@ then
     exit 1
 fi
 
-#argSandbox=
-#argFakeinsert=
-#argFakeRelease=
-#argUser=
-#argGroup=
-#argRepoList=
-#argDevice
-#argFakeDevice
-#argCreateFakeDevice
+argSandbox=
+argFakeinsert=
+argFakeRelease=
+argUser=
+argGroup=
+argRepoList=
+argDevice=
+argFakeDevice=
+argCreateFakeDevice=
+argShowFakeDevice=
+argCreateSandbox=
+argShowSandbox=
+argListFakeDevices=
+argListSandboxes=
+argRemoveFakeDevice=
+argRemoveSandbox=
 
 function checkArgSandbox {
     if [ ! -d "$1" ]
@@ -249,6 +256,27 @@ do
     then
         argFakeDevice="${i:21}"
         checkCreateFakeDevice "$argFakeDevice"
+    elif [[ ${i:0:19} == "--show-fake-device=" ]]
+    then
+        argShowFakeDevice="${i:19}"
+    elif [[ ${i:0:17} == "--create-sandbox=" ]]
+    then
+        argCreateSandbox="${i:17}"
+    elif [[ ${i:0:15} == "--show-sandbox=" ]]
+    then
+        argShowSandbox="${i:15}"
+    elif [[ ${i:0:20} == "--list-fake-devices=" ]]
+    then
+        argListFakeDevices="${i:20}"
+    elif [[ ${i:0:17} == "--list-sandboxes=" ]]
+    then
+        argListSandboxes="${i:17}"
+    elif [[ ${i:0:21} == "--remove-fake-device=" ]]
+    then
+        argRemoveFakeDevice="${i:21}"
+    elif [[ ${i:0:17} == "--remove-sandbox=" ]]
+    then
+        argRemoveSandbox="${i:17}"
     else
         echo "unexpected argument: $i
 Call \"./flash-git.git --help\" for details"
