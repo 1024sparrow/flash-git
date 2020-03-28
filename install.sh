@@ -29,7 +29,7 @@ ${underline}Инициализация флешки по локальным ре
 * вставьте флешку (не монтируйте), определите файл её устройства (что-то вроде /dev/sdb)
 * запустите от имени суперпользователя данный скрипт со следующими аргументами:
 
-\$sudo ./install.sh <ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --repo-list=<путь_А>
+\$sudo ./install.sh --device=<ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --repo-list=<путь_А>
 
 ${underline}Инициализация локальных репозиториев по флешке:${nounderline}
 
@@ -47,7 +47,7 @@ ${underline}Инициализация локальных репозиторие
 * вставьте флешку (не монтируйте), определите файл её устройства (что-то вроде /dev/sdb)
 * запустите от имени суперпользователя данный скрипт со следующими аргументами:
 
-\$sudo ./install.sh <ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --user=\$USER --group=\$USER
+\$sudo ./install.sh --device=<ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --user=\$USER --group=\$USER
 
 ${underline}Дополнительные аргументы для отладки${nounderline}
 
@@ -76,12 +76,13 @@ then
     exit 1
 fi
 
-argSandbox=
-argFakeinsert=
-argFakeRelease=
-argUser=
-argGroup=
-argRepoList=
+#argSandbox=
+#argFakeinsert=
+#argFakeRelease=
+#argUser=
+#argGroup=
+#argRepoList=
+#argDevice
 
 function checkArgSandbox {
     #echo checkSandbox
@@ -110,7 +111,6 @@ function checkArgUser {
 }
 
 function checkArgGroup {
-    echo checkArgGroup
     if [ "$(grep -c "^$1:" /etc/group)" -eq 0 ]
     then
         echo "there is not such group: $1"
@@ -120,6 +120,14 @@ function checkArgGroup {
 
 function checkArgRepoList {
     echo checkArgRepoList
+}
+
+function checkMediaDevice {
+    if [ ! -b "$1" ]
+    then
+        echo "\"$1\" is not valid media device"
+        exit 1
+    fi
 }
 
 for i in $*
@@ -149,12 +157,21 @@ do
     then
         argRepoList="${i:12}"
         checkArgRepoList "$argRepoList"
+    elif [[ ${i:0:9} == "--device=" ]]
+    then
+        argDevice="${i:9}"
+        checkMediaDevice "$argDevice"
     else
         echo "unexpected argument: $i
 Call \"./install.sh --help\" for details"
         exit 1
     fi
 done
+
+#if [ ! -z $argUser ] && []
+#then
+#    echo "user set"
+#fi
 
 echo "NOT IMPLEMENTED"
 exit 0
