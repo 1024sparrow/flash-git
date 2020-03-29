@@ -338,39 +338,34 @@ declare -i counter=0
 while [ $iComb -lt ${#validArgsCombinations[@]} ]
 do
     counter=0
-    echo "${validArgsCombinations[$iComb]}"
-    iComb=$(($iComb + 1))
     for i in ${allArgs[@]}
     do
         for ii in ${validArgsCombinations[$iComb]}
         do
-            #echo "$i -- $ii"
             if [[ $i == $ii ]]
             then
-                #echo ">>> $i"
-                counter+=1
-            else
-                no=true
-                break
+                if [ ! -z ${!i} ]
+                then
+                    counter+=1
+                fi
             fi
         done
-        echo "no: $no"
-        if [ -z $no ]
-        then
-            echo "accepted"
-        fi
     done
+    tmp=${validArgsCombinations[$iComb]}
+    if [ $counter -eq ${#tmp[@]} ]
+    then
+        echo "**** ${validArgsCombinations[$iComb]}"
+        ok=true
+    fi
+    iComb+=1
 done
-#for i in ${validArgsCombinations[*]}
-#do
-#    echo $i
-#done
 
-#echo "${#selected[@]}"
-#for i in ${selected[@]}
-#do
-#    echo "-- $i"
-#done
+if [ ok=true ]
+then
+    echo 11
+else
+    echo 22
+fi
 
 #if [ ! -z $argUser ] && []
 #then
