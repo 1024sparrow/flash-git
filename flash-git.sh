@@ -219,7 +219,7 @@ function checkCreateFakeDevice {
 
 for i in $*
 do
-    echo $i
+    #echo $i
     if [[ ${i:0:10} == "--sandbox=" ]]
     then
         argSandbox="${i:10}"
@@ -284,6 +284,7 @@ Call \"./flash-git.git --help\" for details"
     fi
 done
 
+#===========================
 singleArgumented=(
     argFakeinsert
     argFakeRelease
@@ -296,19 +297,30 @@ singleArgumented=(
     argListSandboxes
     argRemoveSandbox
 )
+declare -a selected
 for i in ${singleArgumented[@]}
 do
-    echo "* $i"
-    varName="$i"
-    echo "${i}: ${!i}"
-    #for i in ${singleArgumented[@]}
-    #do
-        if [ ! -z ${!varName} ]
-        then
-            echo "**************: $varName"
-        fi
-    #done
+    if [ ! -z ${!i} ]
+    then
+        selected=(${selected[@]} "${i}")
+    fi
 done
+if [ ${#selected[@]} -gt 1 ]
+then
+    echo -n "use either \"${selected[0]}\""
+    for i in ${selected[@]:1}
+    do
+        echo -n " or \"$i\""
+    done
+    echo " but not combine them"
+fi
+#===========================
+
+#echo "${#selected[@]}"
+#for i in ${selected[@]}
+#do
+#    echo "-- $i"
+#done
 
 #if [ ! -z $argUser ] && []
 #then
