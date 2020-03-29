@@ -355,7 +355,17 @@ then
     exit 1
 fi
 
-if [ $argDevice ] && [ $argRepoList ]
+function createFakeMedia {
+    # boris here
+}
+
+if [ $argFakeinsert ]
+then
+    echo "fake media insert"
+elif [ $argFakeRelease ]
+then
+    echo "fake media release"
+elif [ $argDevice ] && [ $argRepoList ]
 then
     echo "initialize local repositories by media"
 elif [ $argFakeDevice ] && [ $argRepoList ] && [ $argSandbox ]
