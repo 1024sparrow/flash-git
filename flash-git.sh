@@ -126,22 +126,24 @@ then
     exit 1
 fi
 
-argSandbox=
-argFakeinsert=
-argFakeRelease=
-argUser=
-argGroup=
-argRepoList=
-argDevice=
-argFakeDevice=
-argCreateFakeDevice=
-argShowFakeDevice=
-argCreateSandbox=
-argShowSandbox=
-argListFakeDevices=
-argListSandboxes=
-argRemoveFakeDevice=
-argRemoveSandbox=
+allArgs=(
+    argSandbox
+    argFakeinsert
+    argFakeRelease
+    argUser
+    argGroup
+    argRepoList
+    argDevice
+    argFakeDevice
+    argCreateFakeDevice
+    argShowFakeDevice
+    argCreateSandbox
+    argShowSandbox
+    argListFakeDevices
+    argListSandboxes
+    argRemoveFakeDevice
+    argRemoveSandbox
+)
 
 function checkArgSandbox {
     if [ ! -d "$1" ]
@@ -315,6 +317,54 @@ then
     echo " but not combine them"
 fi
 #===========================
+validArgsCombinations=(
+    "argFakeinsert"
+    "argFakeRelease"
+    "argCreateFakeDevice"
+    "argShowFakeDevice"
+    "argListFakeDevices"
+    "argRemoveFakeDevice"
+    "argCreateSandbox"
+    "argShowSandbox"
+    "argListSandboxes"
+    "argRemoveSandbox"
+    "argDevice argRepoList"
+    "argFakeDevice argRepoList argSandbox"
+    "argDevice argUser argGroup"
+    "argFakeDevice argUser argGroup argSandbox"
+)
+declare -i iComb=0
+declare -i counter=0
+while [ $iComb -lt ${#validArgsCombinations[@]} ]
+do
+    counter=0
+    echo "${validArgsCombinations[$iComb]}"
+    iComb=$(($iComb + 1))
+    for i in ${allArgs[@]}
+    do
+        for ii in ${validArgsCombinations[$iComb]}
+        do
+            #echo "$i -- $ii"
+            if [[ $i == $ii ]]
+            then
+                #echo ">>> $i"
+                counter+=1
+            else
+                no=true
+                break
+            fi
+        done
+        echo "no: $no"
+        if [ -z $no ]
+        then
+            echo "accepted"
+        fi
+    done
+done
+#for i in ${validArgsCombinations[*]}
+#do
+#    echo $i
+#done
 
 #echo "${#selected[@]}"
 #for i in ${selected[@]}
