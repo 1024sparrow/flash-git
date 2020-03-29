@@ -335,11 +335,14 @@ validArgsCombinations=(
 )
 declare -i iComb=0
 declare -i counter=0
+ok=false
 while [ $iComb -lt ${#validArgsCombinations[@]} ]
 do
     counter=0
+    ok=true
     for i in ${allArgs[@]}
     do
+        found=false
         for ii in ${validArgsCombinations[$iComb]}
         do
             if [[ $i == $ii ]]
@@ -347,18 +350,43 @@ do
                 if [ ! -z ${!i} ]
                 then
                     counter+=1
+                    found=true
                 fi
             fi
         done
+        if [[ $found == false ]]
+        then
+            if [ ! -z ${!i} ]
+            then
+                ok=false
+                continue
+                #echo "to much arguments!"
+                #exit 1
+            fi
+        fi
     done
+    if [[ $ok == true ]]
+    then
+        break
+    fi
+
     tmp=${validArgsCombinations[$iComb]}
     if [ $counter -eq ${#tmp[@]} ]
     then
-        echo "**** ${validArgsCombinations[$iComb]}"
+        if [[ $ok == true ]]
+        then
+            break
+        fi
         ok=true
     fi
     iComb+=1
 done
+
+if [[ $ok == false ]]
+then
+    echo "incorrect arguments combination. See "--help" for details."
+    exit 1
+fi
 
 if [ ok=true ]
 then
