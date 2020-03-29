@@ -267,12 +267,12 @@ do
     elif [[ ${i:0:15} == "--show-sandbox=" ]]
     then
         argShowSandbox="${i:15}"
-    elif [[ ${i:0:20} == "--list-fake-devices=" ]]
+    elif [[ ${i} == "--list-fake-devices" ]]
     then
-        argListFakeDevices="${i:20}"
-    elif [[ ${i:0:17} == "--list-sandboxes=" ]]
+        argListFakeDevices=true
+    elif [[ ${i} == "--list-sandboxes" ]]
     then
-        argListSandboxes="${i:17}"
+        argListSandboxes=true
     elif [[ ${i:0:21} == "--remove-fake-device=" ]]
     then
         argRemoveFakeDevice="${i:21}"
@@ -286,37 +286,6 @@ Call \"./flash-git.git --help\" for details"
     fi
 done
 
-#===========================
-singleArgumented=(
-    argFakeinsert
-    argFakeRelease
-    argCreateFakeDevice
-    argShowFakeDevice
-    argListFakeDevices
-    argRemoveFakeDevice
-    argCreateSandbox
-    argShowSandbox
-    argListSandboxes
-    argRemoveSandbox
-)
-declare -a selected
-for i in ${singleArgumented[@]}
-do
-    if [ ! -z ${!i} ]
-    then
-        selected=(${selected[@]} "${i}")
-    fi
-done
-if [ ${#selected[@]} -gt 1 ]
-then
-    echo -n "use either \"${selected[0]}\""
-    for i in ${selected[@]:1}
-    do
-        echo -n " or \"$i\""
-    done
-    echo " but not combine them"
-fi
-#===========================
 validArgsCombinations=(
     "argFakeinsert"
     "argFakeRelease"
@@ -360,8 +329,6 @@ do
             then
                 ok=false
                 continue
-                #echo "to much arguments!"
-                #exit 1
             fi
         fi
     done
@@ -388,17 +355,43 @@ then
     exit 1
 fi
 
-if [ ok=true ]
+if [ $argDevice ] && [ $argRepoList ]
 then
-    echo 11
-else
-    echo 22
+    echo "initialize local repositories by media"
+elif [ $argFakeDevice ] && [ $argRepoList ] && [ $argSandbox ]
+then
+    echo "initialize local repositories by media (fake mode)"
+elif [ $argDevice ] && [ $argUser ] && [ $argGroup ]
+then
+    echo "initialize media by local repositories"
+elif [ $argFakeDevice ] && [ $argUser ] && [ $argGroup ] && [ $argSandbox ]
+then
+    echo "initialize fake media by local repositories"
+elif [ $argCreateFakeDevice ]
+then
+    echo "create fake device"
+elif [ $argShowFakeDevice ]
+then
+    echo "show fake device"
+elif [ $argCreateSandbox ]
+then
+    echo "create sandbox"
+elif [ $argShowSandbox ]
+then
+    echo "show sandbox"
+elif [ $argListFakeDevices ]
+then
+    echo "list fake devices"
+elif [ $argListSandboxes ]
+then
+    echo "list sandboxes"
+elif [ $argRemoveFakeDevice ]
+then
+    echo "remove fake device"
+elif [ $argRemoveSandbox ]
+then
+    echo "remove sandbox"
 fi
-
-#if [ ! -z $argUser ] && []
-#then
-#    echo "user set"
-#fi
 
 echo "NOT IMPLEMENTED"
 exit 0
