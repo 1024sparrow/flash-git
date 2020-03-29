@@ -254,8 +254,8 @@ do
         checkFakeMedia "argFakeDevice"
     elif [[ ${i:0:21} == "--create-fake-device=" ]]
     then
-        argFakeDevice="${i:21}"
-        checkCreateFakeDevice "$argFakeDevice"
+        argCreateFakeDevice="${i:21}"
+        checkCreateFakeDevice "$argCreateFakeDevice"
     elif [[ ${i:0:19} == "--show-fake-device=" ]]
     then
         argShowFakeDevice="${i:19}"
@@ -284,19 +284,30 @@ Call \"./flash-git.git --help\" for details"
     fi
 done
 
-for i in \
-    argFakeinsert \
-    argFakeRelease \
-    argCreateFakeDevice \
-    argShowFakeDevice \
-    argListFakeDevices \
-    argRemoveFakeDevice \
-    argCreateSandbox \
-    argShowSandbox \
-    argListSandboxes \
+singleArgumented=(
+    argFakeinsert
+    argFakeRelease
+    argCreateFakeDevice
+    argShowFakeDevice
+    argListFakeDevices
+    argRemoveFakeDevice
+    argCreateSandbox
+    argShowSandbox
+    argListSandboxes
     argRemoveSandbox
+)
+for i in ${singleArgumented[@]}
 do
     echo "* $i"
+    varName="$i"
+    echo "${i}: ${!i}"
+    #for i in ${singleArgumented[@]}
+    #do
+        if [ ! -z ${!varName} ]
+        then
+            echo "**************: $varName"
+        fi
+    #done
 done
 
 #if [ ! -z $argUser ] && []
