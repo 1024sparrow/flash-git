@@ -240,6 +240,28 @@ function showFakeMedia {
     done
 }
 
+function createSandbox {
+    if [ -d "$1" ]
+    then
+        echo "such directory already exists"
+        exit 1
+    fi
+    mkdir "$1"
+    echo -n "host id: "
+    read tmp
+    echo $tmp > "$1"/hostid
+}
+
+function showSandbox {
+    if [ ! -r "$1"/hostid ]
+    then
+        echo "such sandbox not found"
+        exit 1
+    fi
+    tmp=$(cat "$1"/hostid)
+    echo "host id: $tmp"
+}
+
 for i in $*
 do
     #echo $i
@@ -288,9 +310,13 @@ do
     elif [[ ${i:0:17} == "--create-sandbox=" ]]
     then
         argCreateSandbox="${i:17}"
+        createSandbox "$argCreateSandbox"
+        exit 0
     elif [[ ${i:0:15} == "--show-sandbox=" ]]
     then
         argShowSandbox="${i:15}"
+        showSandbox "$argShowSandbox"
+        exit 0
     elif [[ ${i} == "--list-fake-devices" ]]
     then
         argListFakeDevices=true
