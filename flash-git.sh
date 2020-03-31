@@ -226,6 +226,20 @@ function createFakeMedia {
     done
 }
 
+function showFakeMedia {
+    if [ ! -r "$1"/hardware ]
+    then
+        echo "such fake device not found"
+        exit 1
+    fi
+    source "$1"/hardware
+    for i in idVendor idProduct serial product manufacturer
+    do
+        tmp=ID_$i
+        echo "ID_$i=${!tmp}"
+    done
+}
+
 for i in $*
 do
     #echo $i
@@ -269,6 +283,8 @@ do
     elif [[ ${i:0:19} == "--show-fake-device=" ]]
     then
         argShowFakeDevice="${i:19}"
+        showFakeMedia $argShowFakeDevice
+        exit 0
     elif [[ ${i:0:17} == "--create-sandbox=" ]]
     then
         argCreateSandbox="${i:17}"
