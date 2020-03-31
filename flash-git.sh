@@ -18,11 +18,11 @@ USAGE:
   $ ./flash-git.git --help
   no matter if in addon to "--help" would be any other arguments - they will be ignored
 
-  initialize local repositories by media:
+  initialize media by local repositories:
   $ ./flash-git.git --device=<DEVICE> --repo-list=<REPO_LIST>
   $ ./flash-git.git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --sandbox=<SANDBOX>
 
-  initialize media by local repositories:
+  initialize local repositories by media:
   $ ./flash-git.git --device=<DEVICE> --user=<USER> --group=<GROUP>
   $ ./flash-git.git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
 
@@ -498,32 +498,31 @@ fi
 echo "NOT IMPLEMENTED"
 exit 0
 
-if [[ ! -b $1 ]]
-then
-	echo Please specify a device to set as your repository carrier
-	exit 1
-fi
-
 hostid=$(hostid)
 
-if [[ -r $2 ]]
+if [[ -r "$argRepoList" ]]
 then
 	rm -rf /usr/share/flash-git
 	mkdir /usr/share/flash-git
 	echo -n > /usr/share/flash-git/hardware
-	for i in idVendor idProduct serial product manufacturer
-	do
-		var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
-		echo ID_$i=$var >> /usr/share/flash-git/hardware
-	done
+    if [ ! -z $argDevice ]
+    then
+        for i in idVendor idProduct serial product manufacturer
+        do
+            var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
+            echo ID_$i=$var >> /usr/share/flash-git/hardware
+        done
+    else # argFakeDevice is not null
+        cp $argFakeDevice/hardware /usr/share/flash-git/hardware
+    fi
 
-	source /usr/share/flash-git/hardware
+	source /usr/share/flash-git/hardware # boris e: store this locally, in flash-git repository (for multy-flash supporting)
 	echo $ID_SERIAL
 
 
 	rm -rf root
 	mkdir root
-	for i in $(cat $2)
+	for i in $(cat "$argRepoList")
 	do
 		echo $i
 		repopath=$(pwd)/root/$(basename $i).git
@@ -538,12 +537,18 @@ then
 		git push flash-git
 		popd
 	done
-	cp -L $2 root/repos # dereferencing if it's a symbolyc link
+	cp -L "$argRepoList" root/repos # dereferencing if it's a symbolyc link
 	echo $hostid > root/hosts
 
-	mkfs.ext4 $1 -d root && echo OK || echo FAILED
-	rm -rf root
-	echo FINISHED
+    if [ ! -z $argDevice ]
+    then
+        mkfs.ext4 $1 -d root && echo OK || echo FAILED
+        rm -rf root
+    else # argFakeDevice is not null
+        rm -rf "$argFakeDevice"/root
+        mv root "$argFakeDevice"/
+        echo OK
+    fi
 
 else
 	# echo Prease specify file with repositories list
