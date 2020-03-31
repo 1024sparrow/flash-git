@@ -262,6 +262,26 @@ function showSandbox {
     echo "host id: $tmp"
 }
 
+function listFakeDevices {
+    for i in $(ls -1)
+    do
+        if [ -r "$i"/hardware ]
+        then
+            echo "$i"
+        fi
+    done
+}
+
+function listSandboxes {
+    for i in $(ls -1)
+    do
+        if [ -r "$i"/hostid ]
+        then
+            echo "$i"
+        fi
+    done
+}
+
 for i in $*
 do
     #echo $i
@@ -320,9 +340,13 @@ do
     elif [[ ${i} == "--list-fake-devices" ]]
     then
         argListFakeDevices=true
+        listFakeDevices
+        exit 0
     elif [[ ${i} == "--list-sandboxes" ]]
     then
         argListSandboxes=true
+        listSandboxes
+        exit 0
     elif [[ ${i:0:21} == "--remove-fake-device=" ]]
     then
         argRemoveFakeDevice="${i:21}"
