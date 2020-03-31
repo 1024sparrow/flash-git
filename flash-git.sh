@@ -282,6 +282,24 @@ function listSandboxes {
     done
 }
 
+function removeFakeDevice {
+    if [ ! -r "$1"/hardware ]
+    then
+        echo "such fake device not found"
+        exit 1
+    fi
+    rm -rf "$1"
+}
+
+function removeSandbox {
+    if [ ! -r "$1"/hostid ]
+    then
+        echo "such fake device not found"
+        exit 1
+    fi
+    rm -rf "$1"
+}
+
 for i in $*
 do
     #echo $i
@@ -350,9 +368,13 @@ do
     elif [[ ${i:0:21} == "--remove-fake-device=" ]]
     then
         argRemoveFakeDevice="${i:21}"
+        removeFakeDevice "$argRemoveFakeDevice"
+        exit 0
     elif [[ ${i:0:17} == "--remove-sandbox=" ]]
     then
         argRemoveSandbox="${i:17}"
+        removeSandbox "$argRemoveSandbox"
+        exit 0
     else
         echo "unexpected argument: $i
 Call \"./flash-git.git --help\" for details"
