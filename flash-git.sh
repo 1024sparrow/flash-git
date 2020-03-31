@@ -211,12 +211,19 @@ function checkMediaDevice {
     fi
 }
 
-function checkCreateFakeDevice {
+function createFakeMedia {
     if [ -d "$1" ]
     then
-        echo "can not create fake device: such directory already exist"
+        echo "such directory already exists"
         exit 1
     fi
+    mkdir "$1"
+	for i in idVendor idProduct serial product manufacturer
+    do
+        echo -n "$i: "
+        read tmp
+        echo "ID_$i=$tmp" >> "$1"/hardware
+    done
 }
 
 for i in $*
@@ -257,7 +264,8 @@ do
     elif [[ ${i:0:21} == "--create-fake-device=" ]]
     then
         argCreateFakeDevice="${i:21}"
-        checkCreateFakeDevice "$argCreateFakeDevice"
+        createFakeMedia "$argCreateFakeDevice"
+        exit 0
     elif [[ ${i:0:19} == "--show-fake-device=" ]]
     then
         argShowFakeDevice="${i:19}"
@@ -354,10 +362,6 @@ then
     echo "incorrect arguments combination. See "--help" for details."
     exit 1
 fi
-
-function createFakeMedia {
-    # boris here
-}
 
 if [ $argFakeinsert ]
 then
