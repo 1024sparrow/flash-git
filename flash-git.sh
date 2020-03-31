@@ -551,6 +551,7 @@ then
     fi
 
 else
+    # boris here
 	# echo Prease specify file with repositories list
 	rm -rf root
 	mkdir root
