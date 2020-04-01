@@ -551,11 +551,18 @@ then
     fi
 
 else
-    # boris here
-	# echo Prease specify file with repositories list
-	rm -rf root
-	mkdir root
-	mount $1 root
+    if [ ! -z $argDevice ]
+    then
+        rm -rf root
+        mkdir root
+        mount $1 root
+    else # argFakeDevice is not null
+        if [ ! -d $argFakeDevice/root ]
+        then
+            mkdir $argFakeDevice/root
+        fi
+        ln -s $argFakeDevice/root ./
+    fi
 	if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
 	then
 		echo "reinitializing? Rejected."
@@ -577,16 +584,17 @@ else
 		pushd "$line"
 		git remote rename origin flash-git
 		popd
-		chown -R boris "$line"
-		chgrp -R boris "$line"
+		chown -R $argUser "$line"
+		chgrp -R $argGroup "$line"
 	done < root/repos
 	echo $hostid >> root/hosts
 
-
-
-	umount root
-	rm -rf root
-	exit 1
+    if [ ! -z $argDevice ]
+        umount root
+        rm -rf root
+    else
+        rm root
+    fi
 fi
 
 mediaPath=$(pwd)/root
@@ -605,13 +613,19 @@ then
 	exit 1
 fi
 
-#r=/home/boris/opt/flash-git
+# boris here:
+# 1. sandbox writing instead of real filesystem. Cloning/synchroning local repositories.
+#   1.1. In initialize flash section
+#   1.2. In initialize local repos section
+#   1.3. In flash-git__add.sh and flash-git__remove.sh
+# 2. --fake-insert and --fake-release implementation
+
 r=$(mktemp -d)
 pushd $r
 rm -rf root
 mkdir root
 mount $1 root
-for oRepo in $(cat root/repos)
+for oRepo in $(cat root/repos) # boris e: read per-entire-line instead of split by space-symbols
 do
 	echo "repo: " $oRepo
 	pushd $oRepo
@@ -623,15 +637,19 @@ done
 umount root
 rm -rf root
 popd
-" > /usr/local/bin/flash-git__add.sh
+" > flash-git__add.sh
 
 echo "#!/bin/bash
-" > /usr/local/bin/flash-git__remove.sh
+" > flash-git__remove.sh
 
-chmod +x /usr/local/bin/flash-git__{add,remove}.sh
+chmod +x flash-git__{add,remove}.sh
+#chmod +x /usr/local/bin/flash-git__{add,remove}.sh
 
-#echo "KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"090c\", ATTRS{idProduct}==\"1000\", ATTRS{serial}==\"1306030911800573\", ATTRS{product}==\"Silicon-Power4G\", ATTRS{manufacturer}==\"UFD 2.0\", RUN+=\"/usr/local/bin/flash-git__add.sh /dev/%k%n\"" > /etc/udev/rules.d/flash-git.rules
-
-echo "KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"ID_manufacturer\", RUN+=\"/usr/local/bin/flash-git__add.sh /dev/%k%n\"" > /etc/udev/rules.d/10-flash-git.rules
-
-udevadm control --reload-rules && udevadm trigger
+if [ ! -z $argDevice ]
+then
+    mv flash-git__add.sh /usr/local/bin/flash-git__add.sh
+    mv flash-git__remove.sh /usr/local/bin/flash-git__remove.sh
+    #echo "KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"090c\", ATTRS{idProduct}==\"1000\", ATTRS{serial}==\"1306030911800573\", ATTRS{product}==\"Silicon-Power4G\", ATTRS{manufacturer}==\"UFD 2.0\", RUN+=\"/usr/local/bin/flash-git__add.sh /dev/%k%n\"" > /etc/udev/rules.d/flash-git.rules
+    echo "KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"ID_manufacturer\", RUN+=\"/usr/local/bin/flash-git__add.sh /dev/%k%n\"" > /etc/udev/rules.d/10-flash-git.rules
+    udevadm control --reload-rules && udevadm trigger
+fi
