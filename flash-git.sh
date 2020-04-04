@@ -148,12 +148,12 @@ allArgs=(
 )
 
 function checkArgSandbox {
-    if [ ! -d "$1" ]
+    if [ ! -d sandboxes/"$1" ]
     then
         echo "Not such directory: $1"
         exit 1
     fi
-    if [ ! -r "$1"/hostid ]
+    if [ ! -r sandboxes/"$1"/hostid ]
     then
         echo "Directory \"$1\" does not present a sandbox"
         exit 1
@@ -162,7 +162,7 @@ function checkArgSandbox {
 
 function checkFakeMedia {
     echo checkArgFakeInsert
-    if [ ! -r "$1"/hardware ]
+    if [ ! -r fakeDevices/"$1"/hardware ]
     then
         echo "\"$1\" is not a fake media"
         exit 1
@@ -224,12 +224,12 @@ function releaseFakeDevice {
 }
 
 function createFakeMedia {
-    if [ -d "$1" ]
+    if [ -d fakeDevices/"$1" ]
     then
         echo "such directory already exists"
         exit 1
     fi
-    mkdir "$1"
+    mkdir -p fakeDevices/"$1"
 	for i in idVendor idProduct serial product manufacturer
     do
         echo -n "$i: "
@@ -239,12 +239,12 @@ function createFakeMedia {
 }
 
 function showFakeMedia {
-    if [ ! -r "$1"/hardware ]
+    if [ ! -r fakeDevices/"$1"/hardware ]
     then
         echo "such fake device not found"
         exit 1
     fi
-    source "$1"/hardware
+    source fakeDevices/"$1"/hardware
     for i in idVendor idProduct serial product manufacturer
     do
         tmp=ID_$i
@@ -253,63 +253,73 @@ function showFakeMedia {
 }
 
 function createSandbox {
-    if [ -d "$1" ]
+    if [ -d sandboxes/"$1" ]
     then
         echo "such directory already exists"
         exit 1
     fi
-    mkdir "$1"
+    mkdir -p sandboxes/"$1"
     echo -n "host id: "
     read tmp
-    echo $tmp > "$1"/hostid
+    echo $tmp > sandboxes/"$1"/hostid
 }
 
 function showSandbox {
-    if [ ! -r "$1"/hostid ]
+    if [ ! -r sandboxes/"$1"/hostid ]
     then
         echo "such sandbox not found"
         exit 1
     fi
-    tmp=$(cat "$1"/hostid)
+    tmp=$(cat sandboxes/"$1"/hostid)
     echo "host id: $tmp"
 }
 
 function listFakeDevices {
-    for i in $(ls -1)
-    do
-        if [ -r "$i"/hardware ]
-        then
-            echo "$i"
-        fi
-    done
+    if [ -d fakeDevices ]
+    then
+        pushd fakeDevices
+        for i in $(ls -1)
+        do
+            if [ -r "$i"/hardware ]
+            then
+                echo "$i"
+            fi
+        done
+        popd
+    fi
 }
 
 function listSandboxes {
-    for i in $(ls -1)
-    do
-        if [ -r "$i"/hostid ]
-        then
-            echo "$i"
-        fi
-    done
+    if [ -d sandboxes ]
+    then
+        pushd sandboxes
+        for i in $(ls -1)
+        do
+            if [ -r "$i"/hostid ]
+            then
+                echo "$i"
+            fi
+        done
+        popd
+    fi
 }
 
 function removeFakeDevice {
-    if [ ! -r "$1"/hardware ]
+    if [ ! -r fakeDevices/"$1"/hardware ]
     then
         echo "such fake device not found"
         exit 1
     fi
-    rm -rf "$1"
+    rm -rf fakeDevices/"$1"
 }
 
 function removeSandbox {
-    if [ ! -r "$1"/hostid ]
+    if [ ! -r sandboxes/"$1"/hostid ]
     then
         echo "such fake device not found"
         exit 1
     fi
-    rm -rf "$1"
+    rm -rf sandboxes/"$1"
 }
 
 for i in $*
@@ -526,7 +536,7 @@ then
             echo ID_$i=$var >> hardware
         done
     else # argFakeDevice is not null
-        cp $argFakeDevice/hardware hardware
+        cp fakeDevices/"$argFakeDevice"/hardware hardware
     fi
 
 	source hardware # boris e: store this locally, in flash-git repository (for multy-flash supporting)
@@ -558,8 +568,8 @@ then
         mkfs.ext4 $1 -d root && echo OK || echo FAILED
         rm -rf root
     else # argFakeDevice is not null
-        rm -rf "$argFakeDevice"/root
-        mv root "$argFakeDevice"/
+        rm -rf fakeDevices/"$argFakeDevice"/root
+        mv root fakeDevices/"$argFakeDevice"/
         echo OK
     fi
 
@@ -570,11 +580,11 @@ else
         mkdir root
         mount $1 root
     else # argFakeDevice is not null
-        if [ ! -d $argFakeDevice/root ]
+        if [ ! -d fakeDevices/"$argFakeDevice"/root ]
         then
-            mkdir $argFakeDevice/root
+            mkdir -p fakeDevices/"$argFakeDevice"/root
         fi
-        ln -s $argFakeDevice/root ./
+        ln -s fakeDevices/"$argFakeDevice"/root ./
     fi
 	if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
 	then
@@ -591,7 +601,7 @@ else
 			echo "Path '$line' already existen. FAILED."
 			exit 1
 		fi
-		mkdir -p $line
+		mkdir -p $line # boris e: we change ownership only for leaf directory not for whole path. It is incorrect.
 		repopath=$(pwd)/root/$(basename $line).git
 		git clone "$repopath" $line
 		pushd "$line"
@@ -635,8 +645,8 @@ pushd $mediaPath
 pushd ..
 if [ -z "$argDevice" ]
 then
-    mkdir -r root
-    ln -s $argFakeDevice root
+    mkdir root
+    ln -s fakeDevices/"$argFakeDevice" root
 else
     mount $argDevice ${mediaPath}
 fi
