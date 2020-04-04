@@ -213,6 +213,16 @@ function checkMediaDevice {
     fi
 }
 
+function insertFakeDevice {
+    ./flash-git__add.sh
+    exit 0
+}
+
+function releaseFakeDevice {
+    ./flash-git_remove.sh
+    exit 0
+}
+
 function createFakeMedia {
     if [ -d "$1" ]
     then
@@ -313,10 +323,12 @@ do
     then
         argFakeinsert="${i:14}"
         checkFakeMedia "$argFakeinsert"
+        insertFakeDevice "$argFakeinsert"
     elif [[ ${i:0:15} == "--fake-release=" ]]
     then
         argFakeRelease="${i:15}"
         checkFakeMedia "$argFakeRelease"
+        releaseFakeDevice "$argFakeRelease"
     elif [[ ${i:0:7} == "--user=" ]]
     then
         argUser="${i:7}"
@@ -613,13 +625,6 @@ then
 	echo Please specify a device to set as your repository carrier
 	exit 1
 fi
-
-# boris here:
-# 1. sandbox writing instead of real filesystem. Cloning/synchroning local repositories.
-#   1.1. In initialize flash section
-#   1.2. In initialize local repos section
-#   1.3. In flash-git__add.sh and flash-git__remove.sh
-# 2. --fake-insert and --fake-release implementation
 
 #r=\$(mktemp -d)
 #pushd $r
