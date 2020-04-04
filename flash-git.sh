@@ -621,14 +621,18 @@ fi
 #   1.3. In flash-git__add.sh and flash-git__remove.sh
 # 2. --fake-insert and --fake-release implementation
 
-r=\$(mktemp -d)
-pushd $r
+#r=\$(mktemp -d)
+#pushd $r
+rm -rf ${mediaPath}
+mkdir ${mediaPath}
+
+pushd $mediaPath
+pushd ..
 if [ -z "$argDevice" ]
 then
-    echo boris here
+    mkdir -r root
+    ln -s $argFakeDevice root
 else
-    rm -rf ${mediaPath}
-    mkdir ${mediaPath}
     mount $argDevice ${mediaPath}
 fi
 for oRepo in $(cat root/repos) # boris e: read per-entire-line instead of split by space-symbols
@@ -640,14 +644,17 @@ do
 	git pull flash-git
 	popd
 done
+popd # ..
+popd # $mediaPath
+
 if [ -z "$argDevice" ]
 then
-    echo boris here
+    rm $mediaPath
 else
     umount $mediaPath
     rm -rf $mediaPath
 fi
-popd
+#popd
 " > flash-git__add.sh
 
 echo "#!/bin/bash
