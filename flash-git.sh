@@ -528,7 +528,7 @@ if [[ -r "$argRepoList" ]]
 then
 	#rm -rf /usr/share/flash-git
 	echo -n > hardware
-    if [ ! -z $argDevice ]
+    if [ ! -z "$argDevice" ]
     then
         for i in idVendor idProduct serial product manufacturer
         do
@@ -547,10 +547,15 @@ then
 	mkdir root
 	for i in $(cat "$argRepoList")
 	do
-		echo $i
-		repopath=$(pwd)/root/$(basename $i).git
+        tmp=$i
+        if [ ! -z "$argSandbox" ]
+        then
+            tmp=sandboxes/"$argSandbox"/$i
+        fi
+		echo $tmp
+		repopath=$(pwd)/root/$(basename $tmp).git
 		git init --bare --shared=true "$repopath"
-		pushd $i
+		pushd $tmp
 		git remote remove flash-git
 		git remote add flash-git "$repopath"
 		for branch in $(git branch | cut -c 3-)
@@ -563,7 +568,7 @@ then
 	cp -L "$argRepoList" root/repos # dereferencing if it's a symbolyc link
 	echo $hostid > root/hosts
 
-    if [ ! -z $argDevice ]
+    if [ ! -z "$argDevice" ]
     then
         mkfs.ext4 $1 -d root && echo OK || echo FAILED
         rm -rf root
@@ -574,7 +579,7 @@ then
     fi
 
 else
-    if [ ! -z $argDevice ]
+    if [ ! -z "$argDevice" ]
     then
         rm -rf root
         mkdir root
@@ -596,19 +601,24 @@ else
 	while read -r line
 	do
 		echo "${underline}${line}${nounderline}":
-		if [ -d "$line" ]
+        tmp="$line"
+        if [ ! -z "$argSandbox" ]
+        then
+            tmp=sandboxes/"$argSandbox"/"$line"
+        fi
+		if [ -d "$tmp" ]
 		then
 			echo "Path '$line' already existen. FAILED."
 			exit 1
 		fi
-		mkdir -p $line # boris e: we change ownership only for leaf directory not for whole path. It is incorrect.
-		repopath=$(pwd)/root/$(basename $line).git
-		git clone "$repopath" $line
-		pushd "$line"
+		mkdir -p "$tmp" # boris e: we change ownership only for leaf directory not for whole path. It is incorrect.
+		repopath=$(pwd)/root/"$(basename $line).git"
+		git clone "$repopath" "$tmp"
+		pushd "$tmp"
 		git remote rename origin flash-git
 		popd
-		chown -R $argUser "$line"
-		chgrp -R $argGroup "$line"
+		chown -R $argUser "$tmp"
+		chgrp -R $argGroup "$tmp"
 	done < root/repos
 	echo $hostid >> root/hosts
 
@@ -652,8 +662,13 @@ else
 fi
 for oRepo in $(cat root/repos) # boris e: read per-entire-line instead of split by space-symbols
 do
-	echo "repo: " $oRepo
-	pushd $oRepo
+	echo "repo:  $oRepo"
+    tmp="$oRepo"
+    if [ ! -z "$argSandbox" ]
+        tmp="$(pwd)/sandboxes/$argSandbox/$oRepo"
+    then
+    fi
+	pushd "$tmp"
 	git pull flash-git
 	git push flash-git
 	git pull flash-git
