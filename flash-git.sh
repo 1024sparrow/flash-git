@@ -126,6 +126,8 @@ then
     exit 1
 fi
 
+# boris e: add checking for curent directory is the flash-git repository root
+
 allArgs=(
     argSandbox
     argFakeinsert
@@ -502,21 +504,20 @@ hostid=$(hostid)
 
 if [[ -r "$argRepoList" ]]
 then
-	rm -rf /usr/share/flash-git
-	mkdir /usr/share/flash-git
-	echo -n > /usr/share/flash-git/hardware
+	#rm -rf /usr/share/flash-git
+	echo -n > hardware
     if [ ! -z $argDevice ]
     then
         for i in idVendor idProduct serial product manufacturer
         do
             var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
-            echo ID_$i=$var >> /usr/share/flash-git/hardware
+            echo ID_$i=$var >> hardware
         done
     else # argFakeDevice is not null
-        cp $argFakeDevice/hardware /usr/share/flash-git/hardware
+        cp $argFakeDevice/hardware hardware
     fi
 
-	source /usr/share/flash-git/hardware # boris e: store this locally, in flash-git repository (for multy-flash supporting)
+	source hardware # boris e: store this locally, in flash-git repository (for multy-flash supporting)
 	echo $ID_SERIAL
 
 
@@ -601,7 +602,7 @@ mediaPath=$(pwd)/root
 
 echo "#!/bin/bash
 
-if [ ! $(id -u) -eq 0 ]
+if [ ! \$(id -u) -eq 0 ]
 then
     echo Run this under ROOT only!
     exit 1
@@ -620,11 +621,16 @@ fi
 #   1.3. In flash-git__add.sh and flash-git__remove.sh
 # 2. --fake-insert and --fake-release implementation
 
-r=$(mktemp -d)
+r=\$(mktemp -d)
 pushd $r
-rm -rf root
-mkdir root
-mount $1 root
+if [ -z "$argDevice" ]
+then
+    echo boris here
+else
+    rm -rf ${mediaPath}
+    mkdir ${mediaPath}
+    mount $argDevice ${mediaPath}
+fi
 for oRepo in $(cat root/repos) # boris e: read per-entire-line instead of split by space-symbols
 do
 	echo "repo: " $oRepo
@@ -634,8 +640,13 @@ do
 	git pull flash-git
 	popd
 done
-umount root
-rm -rf root
+if [ -z "$argDevice" ]
+then
+    echo boris here
+else
+    umount $mediaPath
+    rm -rf $mediaPath
+fi
 popd
 " > flash-git__add.sh
 
