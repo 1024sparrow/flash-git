@@ -9,7 +9,7 @@ function _flashgit_module {
 		COMPREPLY=( $(compgen -W "$tmp" ) )
 		return
 		;;
-	--fake-device=*)
+	--fake-device=*|--show-fake-device=*|--remove-fake-device=*|--fake-insert=*|--fake-release=*)
 		cur=${cur#*=}
 		if [ -d fakeDevices ]
 		then
@@ -20,7 +20,7 @@ function _flashgit_module {
 		COMPREPLY=( $(compgen -W "$tmp" ) )
 		return
 		;;
-	--sandbox=*)
+	--sandbox=*|--show-sandbox=*|--remove-sandbox=*)
 		cur=${cur#*=}
 		if [ -d sandboxes ]
 		then
