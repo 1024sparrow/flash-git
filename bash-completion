@@ -31,6 +31,18 @@ function _flashgit_module {
 		COMPREPLY=( $(compgen -W "$tmp") )
 		return
 		;;
+	--user=*)
+		cur=${cur#*=}
+		tmp=$(cut -d: -f1 /etc/passwd | grep "$cur")
+		COMPREPLY=( $(compgen -W "$tmp" ) )
+		return
+		;;
+	--group=*)
+		cur=${cur#*=}
+		tmp=$(cut -d: -f1 /etc/group | grep "$cur")
+		COMPREPLY=( $(compgen -W "$tmp" ) )
+		return
+		;;
 	esac
 
 	COMPREPLY=( $(compgen -W '$(_parse_help "$1")' -- "$cur") \

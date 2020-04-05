@@ -83,6 +83,21 @@ ${underline}Дополнительные аргументы для отладк�
 
 Данным скриптом поддерживаются следующие аргументы для отладки и тестирования:
 
+--help
+    show this help
+
+--device=<xx>
+    set flash-device xx
+
+--fake-device=<xx>
+    set fake-device xx
+
+--user=<user>
+    set user to set new local repository ownership
+
+--group=<group>
+    set group to set new local repository ownership
+
 --sandbox=<ПЕСОЧНИЦА>
 	В указанной выше директории должен находиться файл ${bold}hostid${normal} с фейковым идентификатором хоста
 
