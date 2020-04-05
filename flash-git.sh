@@ -534,8 +534,8 @@ then
     echo "remove sandbox"
 fi
 
-echo "NOT IMPLEMENTED"
-exit 0
+#echo "NOT IMPLEMENTED"
+#exit 0
 
 hostid=$(hostid)
 
