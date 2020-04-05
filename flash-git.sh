@@ -554,7 +554,7 @@ then
         cp fakeDevices/"$argFakeDevice"/hardware hardware
     fi
 
-	source hardware # boris e: store this locally, in flash-git repository (for multy-flash supporting)
+	source hardware
 	echo $ID_SERIAL
 
 
@@ -626,7 +626,8 @@ else
 			echo "Path '$line' already existen. FAILED."
 			exit 1
 		fi
-		mkdir -p "$tmp" # boris e: we change ownership only for leaf directory not for whole path. It is incorrect.
+		#mkdir -p "$tmp" # boris e: we change ownership only for leaf directory not for whole path. It is incorrect.
+        su ${argUser} -c "mkdir -p \"$tmp\""
 		repopath=$(pwd)/root/"$(basename $line).git"
 		git clone "$repopath" "$tmp"
 		pushd "$tmp"
