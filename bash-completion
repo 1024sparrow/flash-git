@@ -49,32 +49,4 @@ function _flashgit_module {
 		$(compgen -- "$cur") )
 
 	[[ $COMPREPLY == *= ]] && compopt -o nospace
-
-
-#	local cur prev OPTS
-#	COMPREPLY=()
-#	cur="${COMP_WORDS[COMP_CWORD]}"
-#	prev="${COMP_WORDS[COMP_CWORD-1]}"
-#	case $prev in
-#		'--device=')
-#			COMPREPLY=(ls -1 /dev/sd*)
-#			return 0
-#			;;
-#		'-h'|'--help'|'-V'|'--version')
-#			return 0
-#			;;
-#	esac
-#	case $cur in
-#		-*)
-#			#OPTS=( --help --device= --fake-device= --repo-list= --sandbox= --user= --group= --create-fake-device= --create-sandbox= --show-fake-device= --show-sandbox= --list-fake-devices --list-sandboxes --remove-fake-device= --remove-sandbox=)
-#			OPTS=( --help --list-fake-devices --list-sandboxes "--device=" )
-#			COMPREPLY=( $(compgen -W "${OPTS[*]}" -- $cur) )
-#			return 0
-#			;;
-#	esac
-#	compopt -o bashdefault -o default
-#	#COMPREPLY=( $(compgen -W "$(lsblk -pnro name)" -- $cur) )
-#	#COMPREPLY=( --help --device= --fake-device= --repo-list= --sandbox= --user= --group= --create-fake-device= --create-sandbox= --show-fake-device= --show-sandbox= --list-fake-devices --list-sandboxes --remove-fake-device= --remove-sandbox=)
-#	COMPREPLY=()
-#	return 0
 } && complete -F _flashgit_module flash-git
