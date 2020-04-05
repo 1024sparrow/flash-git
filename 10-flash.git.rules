@@ -1,2 +1,0 @@
-KERNEL=="sd[b-z]*", ATTRS{idVendor}=="090c", ATTRS{idProduct}=="1000", ATTRS{serial}=="1306030911800573", ATTRS{product}=="Silicon-Power4G", ATTRS{manufacturer}=="UFD 2.0", RUN+="/usr/local/bin/flash-git__add.sh /dev/%k%n"
-
