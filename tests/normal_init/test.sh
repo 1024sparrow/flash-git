@@ -11,11 +11,10 @@ if [ -z $help ]
 then
     r=$(mktemp -d)
     echo "all files will create at directory \"$r\""
-    mkdir $r
     pushd $r
 fi
 
-show_enumerated "create sandbox \"sb1\". Initialize two repositories there."
+show_enumerated "Create sandbox \"sb1\". Initialize two repositories there."
 if [ -z $help ]
 then
     s flash-git --create-sandbox=sb1 || exit 1
@@ -34,6 +33,7 @@ then
     done
     popd # sandboxes/sb1
 fi
+exit 1 #
 
 show_enumerated "Create fake device \"fd1\""
 if [ -z $help ]
@@ -64,4 +64,7 @@ then
     popd # $r
 fi
 
-echo FINISHED
+if [ -z $help ]
+then
+    echo FINISHED
+fi
