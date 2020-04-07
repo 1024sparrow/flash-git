@@ -1,40 +1,65 @@
 #!/bin/bash
 
-if [ $(id -u) -eq 0 ]
+source ../tests_common.sh
+
+if [[ $1 == "--help" ]]
 then
-    echo Do not run this under ROOT!
-    exit 1
+    help=on
 fi
 
-function s {
-    su root -c $*
-}
+if [ -z $help ]
+then
+    mkdir gameplay
+    pushd gameplay
+fi
 
-mkdir gameplay
-pushd gameplay
+show_enumerated "create sandbox \"sb1\". Initialize two repositories there."
+if [ -z $help ]
+then
+    s flash-git --create-sandbox=sb1 || exit 1
+    echo -n > repolist
+    pushd sandboxes/sb1
+    for i in repo1 repo2
+    do
+        mkdir $i
+        echo $i >> ../../repolist
+        pushd $i
+        git init
+        echo $i > $i
+        git add $i
+        git commit -m"first commit"
+        popd
+    done
+    popd # sandboxes/sb1
+fi
 
-s flash-git --create-sandbox=sb1 || exit 1
-echo -n > repolist
-pushd sandboxes/sb1
-for i in repo1 repo2
-do
-    mkdir $i
-    echo $i >> ../../repolist
-    pushd $i
-    git init
-    echo $i > $i
-    git add $i
-    git commit -m"first commit"
-    popd
-done
-popd # sandboxes/sb1
+show_enumerated "Create fake device \"fd1\""
+if [ -z $help ]
+then
+    s flash-git --create-fake-device=fd1 || exit 1
+fi
 
-s flash-git --create-fake-device=fd1 || exit 1
+show_enumerated "Initialize device \"fd1\" by local repositories in \"sb1\""
+if [ -z $help ]
+then
+    s flash-git --fake-device=fd1 --repo-list=repolist -sandboxe=sb1 || exit 1
+fi
 
-s flash-git --fake-device=fd1 --repo-list=repolist -sandboxe=sb1 || exit 1
+show_enumerated "Create sandbox \"sb2\""
+if [ -z $help ]
+then
+    s flash-git --create-sandbox=sb2 || exit 1
+fi
 
-s flash-git --create-sandbox=sb2 || exit 1
+show_enumerated "Initialize local repositories in \"sb1\" via device \"fd1\""
+if [ -z $help ]
+then
+    s flash-git --fake-device=fd1 --user=$USER --group=$USER --sandbox=sb2 || exit 1
+fi
 
-s flash-git --fake-device=fd1 --user=$USER --group=$USER --sandbox=sb2 || exit 1
+if [ -z $help ]
+then
+    popd # gameplay
+fi
 
 echo FINISHED
