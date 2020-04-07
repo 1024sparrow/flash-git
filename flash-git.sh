@@ -15,26 +15,26 @@ do
 USAGE:
 
   get help:
-  $ ./flash-git.git --help
+  $ ./flash-git --help
   no matter if in addon to "--help" would be any other arguments - they will be ignored
 
   initialize media by local repositories:
-  $ ./flash-git.git --device=<DEVICE> --repo-list=<REPO_LIST>
-  $ ./flash-git.git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --sandbox=<SANDBOX>
+  $ ./flash-git --device=<DEVICE> --repo-list=<REPO_LIST>
+  $ ./flash-git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --sandbox=<SANDBOX>
 
   initialize local repositories by media:
-  $ ./flash-git.git --device=<DEVICE> --user=<USER> --group=<GROUP>
-  $ ./flash-git.git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
+  $ ./flash-git --device=<DEVICE> --user=<USER> --group=<GROUP>
+  $ ./flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
 
   create fake device:
-  $ ./flash-git.git --create-fake-device=<FAKE_DEVICE>
-  $ ./flash-git.git --show-fake-device=<FAKE_DEVICE>
-  $ ./flash-git.git --create-sandbox=<SANDBOX>
-  $ ./flash-git.git --show-sandbox=<SANDBOX>
-  $ ./flash-git.git --list-fake-devices
-  $ ./flash-git.git --list-sandboxes
-  $ ./flash-git.git --remove-fake-device=<FAKE_DEVICE>
-  $ ./flash-git.git --remove-sandbox=<SANDBOX>
+  $ ./flash-git --create-fake-device=<FAKE_DEVICE>
+  $ ./flash-git --show-fake-device=<FAKE_DEVICE>
+  $ ./flash-git --create-sandbox=<SANDBOX> --user=<USER>
+  $ ./flash-git --show-sandbox=<SANDBOX>
+  $ ./flash-git --list-fake-devices
+  $ ./flash-git --list-sandboxes
+  $ ./flash-git --remove-fake-device=<FAKE_DEVICE>
+  $ ./flash-git --remove-sandbox=<SANDBOX>
 
 
 
@@ -273,10 +273,10 @@ function createSandbox {
         echo "such directory already exists"
         exit 1
     fi
-    mkdir -p sandboxes/"$1"
+    su $2 -c "mkdir -p sandboxes/\"$1\""
     echo -n "host id: "
     read tmp
-    echo $tmp > sandboxes/"$1"/hostid
+    su $2 -c "echo $tmp > sandboxes/\"$1\"/hostid"
 }
 
 function showSandbox {
@@ -387,8 +387,6 @@ do
     elif [[ ${i:0:17} == "--create-sandbox=" ]]
     then
         argCreateSandbox="${i:17}"
-        createSandbox "$argCreateSandbox"
-        exit 0
     elif [[ ${i:0:15} == "--show-sandbox=" ]]
     then
         argShowSandbox="${i:15}"
@@ -428,7 +426,7 @@ validArgsCombinations=(
     "argShowFakeDevice"
     "argListFakeDevices"
     "argRemoveFakeDevice"
-    "argCreateSandbox"
+    "argCreateSandbox argUser"
     "argShowSandbox"
     "argListSandboxes"
     "argRemoveSandbox"
@@ -517,6 +515,8 @@ then
 elif [ $argCreateSandbox ]
 then
     echo "create sandbox"
+    createSandbox "$argCreateSandbox" $argUser
+    exit 0
 elif [ $argShowSandbox ]
 then
     echo "show sandbox"
