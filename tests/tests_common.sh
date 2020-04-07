@@ -7,7 +7,7 @@ then
 fi
 
 function s {
-    su root -c $*
+    su root -c "$*"
 }
 
 declare -i show_enumerated__num=1

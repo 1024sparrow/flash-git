@@ -9,8 +9,10 @@ fi
 
 if [ -z $help ]
 then
-    mkdir gameplay
-    pushd gameplay
+    r=$(mktemp -d)
+    echo "all files will create at directory \"$r\""
+    mkdir $r
+    pushd $r
 fi
 
 show_enumerated "create sandbox \"sb1\". Initialize two repositories there."
@@ -59,7 +61,7 @@ fi
 
 if [ -z $help ]
 then
-    popd # gameplay
+    popd # $r
 fi
 
 echo FINISHED
