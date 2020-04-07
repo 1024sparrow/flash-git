@@ -12,6 +12,10 @@ function s {
 
 declare -i show_enumerated__num=1
 function show_enumerated {
+    if [ -z help ]
+    then
+        echo
+    fi
     echo "$show_enumerated__num. "$*
     show_enumerated__num+=1
 }
