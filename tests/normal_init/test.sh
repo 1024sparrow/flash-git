@@ -17,7 +17,7 @@ fi
 show_enumerated "Create sandbox \"sb1\". Initialize two repositories there."
 if [ -z $help ]
 then
-    s flash-git --create-sandbox=sb1 || exit 1
+    s flash-git --create-sandbox=sb1 --user=$USER || exit 1
     echo -n > repolist
     pushd sandboxes/sb1
     for i in repo1 repo2
@@ -50,7 +50,7 @@ fi
 show_enumerated "Create sandbox \"sb2\""
 if [ -z $help ]
 then
-    s flash-git --create-sandbox=sb2 || exit 1
+    s flash-git --create-sandbox=sb2 --user=$USER || exit 1
 fi
 
 show_enumerated "Initialize local repositories in \"sb1\" via device \"fd1\""
