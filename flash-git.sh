@@ -209,12 +209,17 @@ function checkArgRepoList {
     fi
     for i in $(cat "$1")
     do
-        if [ ! -d $i ]
+        tmp=$i
+        if [ ! -z "$argSandbox" ]
+        then
+            tmp=sandboxes/"$argSandbox"/$i
+        fi
+        if [ ! -d "$tmp" ]
         then
             echo "repository not found: $i"
             exit 1
         fi
-        pushd
+        pushd "$tmp"
         git status &> /dev/null || (echo "directory \"$i\" not initialized as git-repository"; exit 1)
         popd
     done
@@ -249,7 +254,7 @@ function createFakeMedia {
     do
         echo -n "$i: "
         read tmp
-        echo "ID_$i=$tmp" >> "$1"/hardware
+        echo "ID_$i=$tmp" >> fakeDevices/"$1"/hardware
     done
 }
 
@@ -365,7 +370,6 @@ do
     elif [[ ${i:0:12} == "--repo-list=" ]]
     then
         argRepoList="${i:12}"
-        checkArgRepoList "$argRepoList"
     elif [[ ${i:0:9} == "--device=" ]]
     then
         argDevice="${i:9}"
@@ -373,7 +377,7 @@ do
     elif [[ ${i:0:14} == "--fake-device=" ]]
     then
         argFakeDevice="${i:14}"
-        checkFakeMedia "argFakeDevice"
+        checkFakeMedia "$argFakeDevice"
     elif [[ ${i:0:21} == "--create-fake-device=" ]]
     then
         argCreateFakeDevice="${i:21}"
@@ -497,6 +501,7 @@ then
 elif [ $argDevice ] && [ $argRepoList ]
 then
     echo "initialize local repositories by media"
+    checkArgRepoList "$argRepoList"
 elif [ $argFakeDevice ] && [ $argRepoList ] && [ $argSandbox ]
 then
     echo "initialize local repositories by media (fake mode)"
@@ -639,6 +644,7 @@ else
 	echo $hostid >> root/hosts
 
     if [ ! -z $argDevice ]
+    then
         umount root
         rm -rf root
     else

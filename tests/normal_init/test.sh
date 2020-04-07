@@ -33,7 +33,6 @@ then
     done
     popd # sandboxes/sb1
 fi
-exit 1 #
 
 show_enumerated "Create fake device \"fd1\""
 if [ -z $help ]
@@ -44,7 +43,7 @@ fi
 show_enumerated "Initialize device \"fd1\" by local repositories in \"sb1\""
 if [ -z $help ]
 then
-    s flash-git --fake-device=fd1 --repo-list=repolist -sandboxe=sb1 || exit 1
+    s flash-git --fake-device=fd1 --repo-list=repolist --sandbox=sb1 || exit 1
 fi
 
 show_enumerated "Create sandbox \"sb2\""
