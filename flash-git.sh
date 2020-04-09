@@ -543,6 +543,11 @@ fi
 #exit 0
 
 hostid=$(hostid)
+if [[ ! -z "$argSandbox" ]]
+then
+    tmp=sandboxes/"$argSandbox"/hostid
+    hostid=$(cat "$tmp")
+fi
 
 if [[ -r "$argRepoList" ]]
 then
