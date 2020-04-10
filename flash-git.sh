@@ -234,12 +234,12 @@ function checkMediaDevice {
 }
 
 function insertFakeDevice {
-    ./flash-git__add.sh
+    ./flash-git__add.sh "$1"
     exit 0
 }
 
 function releaseFakeDevice {
-    ./flash-git_remove.sh
+    ./flash-git_remove.sh "$1"
     exit 0
 }
 
@@ -354,11 +354,13 @@ do
         argFakeinsert="${i:14}"
         checkFakeMedia "$argFakeinsert"
         insertFakeDevice "$argFakeinsert"
+        exit 0
     elif [[ ${i:0:15} == "--fake-release=" ]]
     then
         argFakeRelease="${i:15}"
         checkFakeMedia "$argFakeRelease"
         releaseFakeDevice "$argFakeRelease"
+        exit 0
     elif [[ ${i:0:7} == "--user=" ]]
     then
         argUser="${i:7}"
@@ -657,7 +659,7 @@ else
     fi
 fi
 
-mediaPath=$(pwd)/root
+mediaPath=$(pwd)
 
 echo "#!/bin/bash
 
@@ -667,51 +669,64 @@ then
     exit 1
 fi
 
-if [[ ! -b $1 ]]
-then
-	echo Please specify a device to set as your repository carrier
-	exit 1
-fi
 
 #r=\$(mktemp -d)
-#pushd $r
-rm -rf ${mediaPath}
-mkdir ${mediaPath}
+#pushd \$r
 
-pushd $mediaPath
-pushd ..
-if [ -z "$argDevice" ]
+if [ ! -d \"$mediaPath\" ]
 then
-    mkdir root
-    ln -s fakeDevices/"$argFakeDevice" root
-else
-    mount $argDevice ${mediaPath}
+    echo flash-git config lost
+    exit 1
 fi
-for oRepo in $(cat root/repos) # boris e: read per-entire-line instead of split by space-symbols
+
+pushd \"$mediaPath\"
+rm -rf root
+if [ -z \"$argDevice\" ]
+then
+    #ln -s fakeDevices/"$argFakeDevice" root
+    if [[ ! -r \"\$1\"/hardware ]]
+    then
+        echo Please specify a fake device to set as your repository carrier
+        exit 1
+    fi
+    ln -s fakeDevices/\"\$1\" root
+else
+    if [[ ! -b \"\$1\" ]]
+    then
+        echo Please specify a device to set as your repository carrier
+        exit 1
+    fi
+    mkdir root
+    mount \"\$1\" root
+fi
+if [ ! -r root/repos ]
+then
+    echo \"\\\"repos\\\" not found\"
+    exit 1
+fi
+for oRepo in \$(cat root/repos) # boris e: read per-entire-line instead of split by space-symbols
 do
-	echo "repo:  $oRepo"
-    tmp="$oRepo"
-    if [ ! -z "$argSandbox" ]
-        tmp="$(pwd)/sandboxes/$argSandbox/$oRepo"
+	echo \"repo:  \$oRepo\"
+    tmp=\"\$oRepo\"
+    if [ ! -z \"$argSandbox\" ]
+        tmp=\"$(pwd)/sandboxes/\"$argSandbox\"/\$oRepo\"
     then
     fi
-	pushd "$tmp"
+	pushd \"\$tmp\"
 	git pull flash-git
 	git push flash-git
 	git pull flash-git
 	popd
 done
-popd # ..
 popd # $mediaPath
 
-if [ -z "$argDevice" ]
+if [ -z \""$argDevice\"" ]
 then
-    rm $mediaPath
+    rm \"$mediaPath\"/root
 else
-    umount $mediaPath
-    rm -rf $mediaPath
+    umount \"$mediaPath\"/root
+    rm -rf \"$mediaPath\"/root
 fi
-#popd
 " > flash-git__add.sh
 
 echo "#!/bin/bash
