@@ -349,7 +349,7 @@ do
     then
         argSandbox="${i:10}"
         checkArgSandbox "$argSandbox"
-    elif [[ ${i:0:14} == "--fake-insert=" ]]
+    elif [[ ${i:0:14} == "--fake-insert=" ]] # boris here: add parameter: sandbox
     then
         argFakeinsert="${i:14}"
         checkFakeMedia "$argFakeinsert"
@@ -689,7 +689,7 @@ then
         echo Please specify a fake device to set as your repository carrier
         exit 1
     fi
-    ln -s fakeDevices/\"\$1\" root
+    ln -s fakeDevices/\"\$1\"/root root
 else
     if [[ ! -b \"\$1\" ]]
     then
@@ -709,10 +709,10 @@ do
 	echo \"repo:  \$oRepo\"
     tmp=\"\$oRepo\"
     if [ ! -z \"$argSandbox\" ]
-        tmp=\"$(pwd)/sandboxes/\"$argSandbox\"/\$oRepo\"
     then
+        tmp=\"$(pwd)/sandboxes/\"$argSandbox\"/\$oRepo\"
     fi
-	pushd \"\$tmp\"
+    pushd \"\$tmp\"
 	git pull flash-git
 	git push flash-git
 	git pull flash-git
