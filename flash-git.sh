@@ -684,7 +684,7 @@ rm -rf root
 if [ -z \"$argDevice\" ]
 then
     #ln -s fakeDevices/"$argFakeDevice" root
-    if [[ ! -r \"\$1\"/hardware ]]
+    if [[ ! -r fakeDevices/\"\$1\"/hardware ]]
     then
         echo Please specify a fake device to set as your repository carrier
         exit 1
