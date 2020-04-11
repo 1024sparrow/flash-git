@@ -94,7 +94,7 @@ do
     then
         argSandbox="${i:10}"
         #checkArgSandbox "$argSandbox"
-    elif [[ ${i:0:14} == "--fake-insert=" ]] # boris here: add parameter: sandbox
+    elif [[ ${i:0:14} == "--fake-insert=" ]]
     then
         argFakeinsert="${i:14}"
         #checkFakeMedia "$argFakeinsert"
