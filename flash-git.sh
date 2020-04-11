@@ -554,6 +554,10 @@ fi
 #echo "NOT IMPLEMENTED"
 #exit 0
 
+#function copy_flashgit_into_dir {
+    #
+#}
+
 hostid=$(hostid)
 if [[ ! -z "$argSandbox" ]]
 then
@@ -604,6 +608,8 @@ then
 	done
 	cp -L "$argRepoList" root/repos # dereferencing if it's a symbolyc link
 	echo $hostid > root/hosts
+
+    #copy_flashgit_into_dir root
 
     if [ ! -z "$argDevice" ]
     then
