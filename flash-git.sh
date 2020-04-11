@@ -15,26 +15,26 @@ do
 USAGE:
 
   get help:
-  $ ./flash-git --help
+  $ flash-git --help
   no matter if in addon to "--help" would be any other arguments - they will be ignored
 
   initialize media by local repositories:
-  $ ./flash-git --device=<DEVICE> --repo-list=<REPO_LIST>
-  $ ./flash-git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --sandbox=<SANDBOX>
+  $ flash-git --device=<DEVICE> --repo-list=<REPO_LIST>
+  $ flash-git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --sandbox=<SANDBOX>
 
   initialize local repositories by media:
-  $ ./flash-git --device=<DEVICE> --user=<USER> --group=<GROUP>
-  $ ./flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
+  $ flash-git --device=<DEVICE> --user=<USER> --group=<GROUP>
+  $ flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
 
   create fake device:
-  $ ./flash-git --create-fake-device=<FAKE_DEVICE>
-  $ ./flash-git --show-fake-device=<FAKE_DEVICE>
-  $ ./flash-git --create-sandbox=<SANDBOX> --user=<USER>
-  $ ./flash-git --show-sandbox=<SANDBOX>
-  $ ./flash-git --list-fake-devices
-  $ ./flash-git --list-sandboxes
-  $ ./flash-git --remove-fake-device=<FAKE_DEVICE>
-  $ ./flash-git --remove-sandbox=<SANDBOX>
+  $ flash-git --create-fake-device=<FAKE_DEVICE>
+  $ flash-git --show-fake-device=<FAKE_DEVICE>
+  $ flash-git --create-sandbox=<SANDBOX> --user=<USER>
+  $ flash-git --show-sandbox=<SANDBOX>
+  $ flash-git --list-fake-devices
+  $ flash-git --list-sandboxes
+  $ flash-git --remove-fake-device=<FAKE_DEVICE>
+  $ flash-git --remove-sandbox=<SANDBOX>
 
 
 
@@ -160,6 +160,23 @@ allArgs=(
     argListSandboxes
     argRemoveFakeDevice
     argRemoveSandbox
+)
+
+validArgsCombinations=(
+    "argFakeinsert argSandbox"
+    "argFakeRelease argSandbox"
+    "argCreateFakeDevice"
+    "argShowFakeDevice"
+    "argListFakeDevices"
+    "argRemoveFakeDevice"
+    "argCreateSandbox argUser"
+    "argShowSandbox"
+    "argListSandboxes"
+    "argRemoveSandbox"
+    "argDevice argRepoList"
+    "argFakeDevice argRepoList argSandbox"
+    "argDevice argUser argGroup"
+    "argFakeDevice argUser argGroup argSandbox"
 )
 
 function checkArgSandbox {
@@ -402,79 +419,72 @@ do
         argRemoveSandbox="${i:17}"
     else
         echo "unexpected argument: $i
-Call \"./flash-git.git --help\" for details"
+See \"--help\" for details."
         exit 1
     fi
 done
 
-validArgsCombinations=(
-    "argFakeinsert argSandbox"
-    "argFakeRelease argSandbox"
-    "argCreateFakeDevice"
-    "argShowFakeDevice"
-    "argListFakeDevices"
-    "argRemoveFakeDevice"
-    "argCreateSandbox argUser"
-    "argShowSandbox"
-    "argListSandboxes"
-    "argRemoveSandbox"
-    "argDevice argRepoList"
-    "argFakeDevice argRepoList argSandbox"
-    "argDevice argUser argGroup"
-    "argFakeDevice argUser argGroup argSandbox"
-)
-declare -i iComb=0
-declare -i counter=0
-ok=false
-while [ $iComb -lt ${#validArgsCombinations[@]} ]
-do
-    counter=0
-    ok=true
-    for i in ${allArgs[@]}
+function checkArguments {
+    declare -i iComb=0
+    declare -i counter=0
+    declare -i allcounter=0
+    while [ $iComb -lt ${#validArgsCombinations[@]} ]
     do
-        found=false
-        for ii in ${validArgsCombinations[$iComb]}
+        allcounter=0
+        counter=0
+        br=false
+        for i in ${allArgs[@]}
         do
-            if [[ $i == $ii ]]
+            if [ ! -z ${!i} ]
             then
-                if [ ! -z ${!i} ]
+                exists=false
+                for ii in ${validArgsCombinations[$iComb]}
+                do
+                    if [[ $i == $ii ]]
+                    then
+                        exists=true
+                    fi
+                done
+                if [[ $exists == false ]]
                 then
-                    counter+=1
-                    found=true
+                    br=true
                 fi
             fi
         done
-        if [[ $found == false ]]
+        if [[ $br == true ]]
         then
-            if [ ! -z ${!i} ]
-            then
-                ok=false
-                continue
-            fi
+            iComb+=1
+            continue
         fi
+        for i in ${validArgsCombinations[$iComb]}
+        do
+            allcounter+=1
+        done
+        for i in ${allArgs[@]}
+        do
+            for ii in ${validArgsCombinations[$iComb]}
+            do
+                if [[ $i == $ii ]]
+                then
+                    if [ ! -z ${!i} ]
+                    then
+                        counter+=1
+                    fi
+                fi
+            done
+        done
+        if [ $allcounter -eq $counter ]
+        then
+            return
+        fi
+        iComb+=1
     done
-    if [[ $ok == true ]]
-    then
-        break
-    fi
 
-    tmp=${validArgsCombinations[$iComb]}
-    if [ $counter -eq ${#tmp[@]} ]
-    then
-        if [[ $ok == true ]]
-        then
-            break
-        fi
-        ok=true
-    fi
-    iComb+=1
-done
-
-if [[ $ok == false ]]
-then
-    echo "incorrect arguments combination. See "--help" for details."
+    echo "incorrect arguments combination. See \"--help\" for details."
     exit 1
-fi
+}
+
+checkArguments
 
 if [ $argFakeinsert ]
 then
