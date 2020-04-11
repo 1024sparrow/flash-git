@@ -1,5 +1,7 @@
 #!/bin/bash
 
+declare -i FLASH_GIT_VERSION=0
+
 #underline=`tput smul`
 #nounderline=`tput rmul`
 #bold=`tput bold`
@@ -610,6 +612,7 @@ then
 	echo $hostid > root/hosts
 
     #copy_flashgit_into_dir root
+    echo FLASH_GIT_VERSION > root/flash_git_version
 
     if [ ! -z "$argDevice" ]
     then
@@ -678,6 +681,7 @@ fi
 mediaPath=$(pwd)
 
 echo "#!/bin/bash
+# flash-git version: $FLASH_GIT_VERSION
 
 if [ ! \$(id -u) -eq 0 ]
 then
@@ -746,6 +750,7 @@ popd # $mediaPath
 " > flash-git__add.sh
 
 echo "#!/bin/bash
+# flash-git version: $FLASH_GIT_VERSION
 " > flash-git__remove.sh
 
 chmod +x flash-git__{add,remove}.sh
