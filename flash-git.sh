@@ -7,6 +7,8 @@ declare -i FLASH_GIT_VERSION=0
 #bold=`tput bold`
 #normal=`tput sgr0`
 
+boris here: udev-rule: static, use /usr/share/flash-git as udev parameters storage
+
 for i in $*
 do
 	if [[ "$i" == "--help" || $i == "-h" ]]
