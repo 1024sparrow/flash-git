@@ -21,12 +21,23 @@ USAGE:
   no matter if in addon to "--help" would be any other arguments - they will be ignored
 
   initialize media by local repositories:
-  $ flash-git --device=<DEVICE> --repo-list=<REPO_LIST>
-  $ flash-git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --sandbox=<SANDBOX>
+  $ flash-git --device=<DEVICE> --alias=<ALIAS> --repo-list=<REPO_LIST> # boris here 1 ("alias" added)
+  $ flash-git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --alias=<ALIAS> --sandbox=<SANDBOX> # boris here 2 ("alias" added)
 
   initialize local repositories by media:
   $ flash-git --device=<DEVICE> --user=<USER> --group=<GROUP>
   $ flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
+
+  unchain media from local repositories:
+  $ flash-git --free
+    flash-git will ask you for media to free
+
+  restore media via local repositories
+  $ flash-git --restore=<DEVICE> # boris here 4
+  $ flash-git --restore=<FAKE_DEVICE> # boris here 5
+
+  show using devices and repositories:
+  $ flash-git --show-registered # boris here 3
 
   create fake device:
   $ flash-git --create-fake-device=<FAKE_DEVICE>
