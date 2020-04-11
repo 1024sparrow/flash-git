@@ -251,7 +251,7 @@ function checkMediaDevice {
 }
 
 function insertFakeDevice {
-    ./flash-git__add.sh "$1"
+    ./flash-git__add.sh "$1" "$2"
     exit 0
 }
 
@@ -720,7 +720,7 @@ do
     tmp=\"\$oRepo\"
     if [ ! -z \"$argSandbox\" ]
     then
-        tmp=\"$(pwd)/sandboxes/\"$argSandbox\"/\$oRepo\"
+        tmp=\"$(pwd)/sandboxes/\"\$2\"/\$oRepo\"
     fi
     pushd \"\$tmp\"
 	git pull flash-git
@@ -728,15 +728,15 @@ do
 	git pull flash-git
 	popd
 done
-popd # $mediaPath
-
 if [ -z \""$argDevice\"" ]
 then
-    rm \"$mediaPath\"/root
+    rm root
 else
-    umount \"$mediaPath\"/root
-    rm -rf \"$mediaPath\"/root
+    umount root
+    rm -rf root
 fi
+popd # $mediaPath
+
 " > flash-git__add.sh
 
 echo "#!/bin/bash
