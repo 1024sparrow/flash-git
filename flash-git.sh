@@ -353,14 +353,10 @@ do
     then
         argFakeinsert="${i:14}"
         checkFakeMedia "$argFakeinsert"
-        insertFakeDevice "$argFakeinsert"
-        exit 0
     elif [[ ${i:0:15} == "--fake-release=" ]]
     then
         argFakeRelease="${i:15}"
         checkFakeMedia "$argFakeRelease"
-        releaseFakeDevice "$argFakeRelease"
-        exit 0
     elif [[ ${i:0:7} == "--user=" ]]
     then
         argUser="${i:7}"
@@ -383,41 +379,27 @@ do
     elif [[ ${i:0:21} == "--create-fake-device=" ]]
     then
         argCreateFakeDevice="${i:21}"
-        createFakeMedia "$argCreateFakeDevice"
-        exit 0
     elif [[ ${i:0:19} == "--show-fake-device=" ]]
     then
         argShowFakeDevice="${i:19}"
-        showFakeMedia $argShowFakeDevice
-        exit 0
     elif [[ ${i:0:17} == "--create-sandbox=" ]]
     then
         argCreateSandbox="${i:17}"
     elif [[ ${i:0:15} == "--show-sandbox=" ]]
     then
         argShowSandbox="${i:15}"
-        showSandbox "$argShowSandbox"
-        exit 0
     elif [[ ${i} == "--list-fake-devices" ]]
     then
         argListFakeDevices=true
-        listFakeDevices
-        exit 0
     elif [[ ${i} == "--list-sandboxes" ]]
     then
         argListSandboxes=true
-        listSandboxes
-        exit 0
     elif [[ ${i:0:21} == "--remove-fake-device=" ]]
     then
         argRemoveFakeDevice="${i:21}"
-        removeFakeDevice "$argRemoveFakeDevice"
-        exit 0
     elif [[ ${i:0:17} == "--remove-sandbox=" ]]
     then
         argRemoveSandbox="${i:17}"
-        removeSandbox "$argRemoveSandbox"
-        exit 0
     else
         echo "unexpected argument: $i
 Call \"./flash-git.git --help\" for details"
@@ -426,8 +408,8 @@ Call \"./flash-git.git --help\" for details"
 done
 
 validArgsCombinations=(
-    "argFakeinsert"
-    "argFakeRelease"
+    "argFakeinsert argSandbox"
+    "argFakeRelease argSandbox"
     "argCreateFakeDevice"
     "argShowFakeDevice"
     "argListFakeDevices"
@@ -497,9 +479,13 @@ fi
 if [ $argFakeinsert ]
 then
     echo "fake media insert"
+    insertFakeDevice "$argFakeinsert" "$argSandbox"
+    exit 0
 elif [ $argFakeRelease ]
 then
     echo "fake media release"
+    releaseFakeDevice "$argFakeRelease"
+    exit 0
 elif [ $argDevice ] && [ $argRepoList ]
 then
     echo "initialize local repositories by media"
@@ -516,9 +502,13 @@ then
 elif [ $argCreateFakeDevice ]
 then
     echo "create fake device"
+    createFakeMedia "$argCreateFakeDevice"
+    exit 0
 elif [ $argShowFakeDevice ]
 then
     echo "show fake device"
+    showFakeMedia $argShowFakeDevice
+    exit 0
 elif [ $argCreateSandbox ]
 then
     echo "create sandbox"
@@ -527,18 +517,28 @@ then
 elif [ $argShowSandbox ]
 then
     echo "show sandbox"
+    showSandbox "$argShowSandbox"
+    exit 0
 elif [ $argListFakeDevices ]
 then
     echo "list fake devices"
+    listFakeDevices
+    exit 0
 elif [ $argListSandboxes ]
 then
     echo "list sandboxes"
+    listSandboxes
+    exit 0
 elif [ $argRemoveFakeDevice ]
 then
     echo "remove fake device"
+    removeFakeDevice "$argRemoveFakeDevice"
+    exit 0
 elif [ $argRemoveSandbox ]
 then
     echo "remove sandbox"
+    removeSandbox "$argRemoveSandbox"
+    exit 0
 fi
 
 #echo "NOT IMPLEMENTED"
