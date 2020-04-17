@@ -678,17 +678,18 @@ then
     fi
 
 else
+    tempdir=$(mktemp -d)
     if [ ! -z "$argDevice" ]
     then
-        rm -rf root
-        mkdir root
-        mount $1 root
+        #rm -rf root
+        mkdir $tempdir/root
+        mount $1 $tempdir/root
     else # argFakeDevice is not null
         if [ ! -d fakeDevices/"$argFakeDevice"/root ]
         then
             mkdir -p fakeDevices/"$argFakeDevice"/root
         fi
-        ln -s fakeDevices/"$argFakeDevice"/root ./
+        ln -s $(pwd)/fakeDevices/"$argFakeDevice"/root $tempdir/
     fi
 	if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
 	then
@@ -696,7 +697,6 @@ else
 		#exit 1
 	fi
 
-	echo "TODO: print error if any from list already existen; create paths to repos and pull from flash-drive"
 	while read -r line
 	do
 		echo "${underline}${line}${nounderline}":
