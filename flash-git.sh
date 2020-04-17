@@ -167,6 +167,7 @@ allArgs=(
     argRepoList
     argDevice
     argFakeDevice
+    argAlias
     argCreateFakeDevice
     argShowFakeDevice
     argCreateSandbox
@@ -188,8 +189,8 @@ validArgsCombinations=(
     "argShowSandbox"
     "argListSandboxes"
     "argRemoveSandbox"
-    "argDevice argRepoList"
-    "argFakeDevice argRepoList argSandbox"
+    "argDevice argRepoList argAlias"
+    "argFakeDevice argRepoList argSandbox argAlias"
     "argDevice argUser argGroup"
     "argFakeDevice argUser argGroup argSandbox"
 )
@@ -408,6 +409,9 @@ do
     then
         argFakeDevice="${i:14}"
         checkFakeMedia "$argFakeDevice"
+    elif [[ ${i:0:8} == "--alias=" ]]
+    then
+        argAlias=${i:8}
     elif [[ ${i:0:21} == "--create-fake-device=" ]]
     then
         argCreateFakeDevice="${i:21}"
@@ -580,27 +584,63 @@ then
     hostid=$(cat "$tmp")
 fi
 
-if [[ -r "$argRepoList" ]]
+if [[ ! -d /usr/share/flash-git ]]
 then
+    mkdir /usr/share/flash-git
+fi
+
+if [[ ! -z "$argRepoList" ]]
+then
+    hardwareFile=
+    workdir=
+    pushd /usr/share/flash-git
+    #for i in $(seq 100)
+    #do
+    #    if [[ -d $i ]]
+    #    then
+    #        echo "Such alias already exists"
+    #        exit 1
+    #    fi
+    #done
+    for i in $(seq 100)
+    do
+        if [[ ! -d $i ]]
+        then
+            mkdir $i
+            echo $argAlias > $i/alias
+            cp "$argRepoList" $i/repos
+            workdir=/usr/share/flash-git/$i
+            hardwareFile=$workdir/hardware
+            echo -n hardware
+            break
+        fi
+    done
+    popd
+    if [[ -z $hardwareFile ]]
+    then
+        echo "Too many devices already registered. Rejected."
+        exit 1
+    fi
+
 	#rm -rf /usr/share/flash-git
-	echo -n > hardware
     if [ ! -z "$argDevice" ]
     then
         for i in idVendor idProduct serial product manufacturer
         do
             var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
-            echo ID_$i=$var >> hardware
+            echo ID_$i=$var >> $hardwareFile
         done
     else # argFakeDevice is not null
-        cp fakeDevices/"$argFakeDevice"/hardware hardware
+        cp fakeDevices/"$argFakeDevice"/hardware $hardwareFile
     fi
 
-	source hardware
-	echo $ID_SERIAL
+
+	source $hardwareFile
+	#echo $ID_SERIAL
 
 
-	rm -rf root
-	mkdir root
+	rm -rf $workdir/root
+	mkdir $workdir/root
 	for i in $(cat "$argRepoList")
 	do
         tmp=$i
@@ -609,7 +649,7 @@ then
             tmp=sandboxes/"$argSandbox"/$i
         fi
 		echo $tmp
-		repopath=$(pwd)/root/$(basename $tmp).git
+		repopath=$workdir/root/$(basename $tmp).git # boris e: add check for repositories names are all unique
 		git init --bare --shared=true "$repopath"
 		pushd $tmp
 		git remote remove flash-git
@@ -621,19 +661,19 @@ then
 		git push flash-git
 		popd
 	done
-	cp -L "$argRepoList" root/repos # dereferencing if it's a symbolyc link
-	echo $hostid > root/hosts
+	#cp -L "$argRepoList" root/repos # dereferencing if it's a symbolyc link
+	echo $hostid > $workdir/root/hosts
 
     #copy_flashgit_into_dir root
-    echo FLASH_GIT_VERSION > root/flash_git_version
+    echo FLASH_GIT_VERSION > $workdir/root/flash_git_version
 
     if [ ! -z "$argDevice" ]
     then
         mkfs.ext4 $1 -d root && echo OK || echo FAILED
-        rm -rf root
+        rm -rf $workdir/root
     else # argFakeDevice is not null
         rm -rf fakeDevices/"$argFakeDevice"/root
-        mv root fakeDevices/"$argFakeDevice"/
+        mv $workdir/root fakeDevices/"$argFakeDevice"/
         echo OK
     fi
 
