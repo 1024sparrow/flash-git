@@ -631,14 +631,16 @@ do
     fi
 done
 workdir=
+localId=-1
 for i in $(seq 100)
 do
     if [[ ! -d $i]]
     then
         mkdir $i
         echo $argAlias > $i/alias
-        mv $tmpHardware $i/hardware
+        cp $tmpHardware $i/hardware
         workdir=/usr/share/flash-git/$i
+        localId=$i
         break
     fi
 done
@@ -823,17 +825,39 @@ mediaPath=$(pwd)
 ## flash-git version: $FLASH_GIT_VERSION
 #" > flash-git__remove.sh
 
-chmod +x flash-git__{add,remove}.sh
+#chmod +x flash-git__{add,remove}.sh
 #chmod +x /usr/local/bin/flash-git__{add,remove}.sh
 
 # boris here:
 # 1. flash-git__{add,remove}.sh must be in /usr/share/flash-git but not in /usr/local/bin
 # 2. check for such device is already registered as automount (with another alias)
+
+udevRulesPath=/etc/udev/rules.d/10-flash-git.rules
+if [ ! -f $udevRulesPath ]
+then
+    echo "# Edit this file ONLY via "flash-git" utility. Do not edit this manually!
+" > $udevRulesPath
+fi
+
 if [ ! -z $argDevice ]
 then
-    mv flash-git__add.sh /usr/local/bin/flash-git__add.sh
-    mv flash-git__remove.sh /usr/local/bin/flash-git__remove.sh
-    #echo "KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"090c\", ATTRS{idProduct}==\"1000\", ATTRS{serial}==\"1306030911800573\", ATTRS{product}==\"Silicon-Power4G\", ATTRS{manufacturer}==\"UFD 2.0\", RUN+=\"/usr/local/bin/flash-git__add.sh /dev/%k%n\"" > /etc/udev/rules.d/flash-git.rules
-    echo "KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"ID_manufacturer\", RUN+=\"/usr/local/bin/flash-git__add.sh /dev/%k%n\"" > /etc/udev/rules.d/10-flash-git.rules
-    udevadm control --reload-rules && udevadm trigger
+    source $tmpHardware
+    cand="KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"ID_manufacturer\", RUN+=\"/usr/share/flash-git/flash-git__add.sh /dev/%k%n\""
+
+    existen=false
+    while read -r line
+    do
+        if [[ "$line" == "$cand" ]]
+        then
+            existen=true
+            break
+        fi
+    done < $udevRulesPath
+
+    if ! $existen
+    then
+        echo "# local ID: $localId" >> $udevRulesPath
+        echo "$cand" >> $udevRulesPath
+        udevadm control --reload-rules && udevadm trigger
+    fi
 fi

@@ -40,5 +40,5 @@ mkdir /usr/share/flash-git
 
 for i in add remove
 do
-    ln -s $(pwd)/flash-git__${i}.sh /usr/local/bin/
+    ln -s $(pwd)/flash-git__${i}.sh /usr/share/flash-git/
 done
