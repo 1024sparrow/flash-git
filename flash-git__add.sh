@@ -1,11 +1,19 @@
 #!/bin/bash
 # flash-git version: 0
 
+# $USER is empty
+
 if [ ! $(id -u) -eq 0 ]
 then
     echo Run this under ROOT only!
     exit 1
 fi
+
+tmpMounted=$(mktemp -d)
+mount $1 $tmpMounted
+#cp $tmpMounted/alias /home/boris/
+exit 0
+#----------------------
 
 
 #r=$(mktemp -d)

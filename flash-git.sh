@@ -7,8 +7,6 @@ declare -i FLASH_GIT_VERSION=0
 #bold=`tput bold`
 #normal=`tput sgr0`
 
-boris here: udev-rule: static, use /usr/share/flash-git as udev parameters storage
-
 for i in $*
 do
 	if [[ "$i" == "--help" || $i == "-h" ]]
@@ -23,8 +21,8 @@ USAGE:
   no matter if in addon to "--help" would be any other arguments - they will be ignored
 
   initialize media by local repositories:
-  $ flash-git --device=<DEVICE> --alias=<ALIAS> --repo-list=<REPO_LIST> # boris here 1 ("alias" added)
-  $ flash-git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --alias=<ALIAS> --sandbox=<SANDBOX> # boris here 2 ("alias" added)
+  $ flash-git --device=<DEVICE> --alias=<ALIAS> --repo-list=<REPO_LIST>
+  $ flash-git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --alias=<ALIAS> --sandbox=<SANDBOX>
 
   initialize local repositories by media:
   $ flash-git --device=<DEVICE> --user=<USER> --group=<GROUP>
@@ -43,10 +41,10 @@ USAGE:
 
   create fake device:
   $ flash-git --create-fake-device=<FAKE_DEVICE>
-  $ flash-git --show-fake-device=<FAKE_DEVICE>
+  $ flash-git --show-fake-device=<FAKE_DEVICE> # boris here 2
   $ flash-git --create-sandbox=<SANDBOX> --user=<USER>
   $ flash-git --show-sandbox=<SANDBOX>
-  $ flash-git --list-fake-devices
+  $ flash-git --list-fake-devices # boris here 1
   $ flash-git --list-sandboxes
   $ flash-git --remove-fake-device=<FAKE_DEVICE>
   $ flash-git --remove-sandbox=<SANDBOX>
@@ -614,8 +612,8 @@ else
 
     for i in idVendor idProduct serial product manufacturer
     do
-        var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
-        echo ID_$i=$var >> $tmpHardware
+        var=$(udevadm info -a -n $argDevice | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
+        echo "ID_$i=\"$var\"" >> $tmpHardware
     done
 fi
 pushd /usr/share/flash-git
@@ -623,7 +621,7 @@ for i in $(seq 100)
 do
     if [[ -d $i ]]
     then
-        if [[ $argAlias == $i/alias ]] && cmp -s $tmpHardware $i/hardware
+        if [[ $argAlias == $(cat $i/alias) ]] && cmp -s $tmpHardware $i/hardware
         then
             echo "this media already registered with such alias. Please unregiser registered previously or try another alias"
             exit 1
@@ -634,7 +632,7 @@ workdir=
 localId=-1
 for i in $(seq 100)
 do
-    if [[ ! -d $i]]
+    if [[ ! -d $i ]]
     then
         mkdir $i
         echo $argAlias > $i/alias
@@ -682,11 +680,14 @@ then
 	echo $hostid > $workdir/root/hosts
 
     #copy_flashgit_into_dir root
-    echo FLASH_GIT_VERSION > $workdir/root/flash_git_version
+    echo $FLASH_GIT_VERSION > $workdir/root/flash_git_version
 
     if [ ! -z "$argDevice" ]
     then
-        mkfs.ext4 $1 -d root && echo OK || echo FAILED
+        #mkfs.ext4 $argDevice -d root && echo OK || echo FAILED
+        umount $argDevice
+        mkfs.ext4 -L "$argAlias" $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp $workdir/alias $tmp/ && cp -rf $workdir/root/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
+        #mkfs.ntfs --no-indexing --label "flash-git__$argAlias" --fast --force $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp -rf $workdir/root/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
         rm -rf $workdir/root
     else # argFakeDevice is not null
         rm -rf fakeDevices/"$argFakeDevice"/root
@@ -828,10 +829,6 @@ mediaPath=$(pwd)
 #chmod +x flash-git__{add,remove}.sh
 #chmod +x /usr/local/bin/flash-git__{add,remove}.sh
 
-# boris here:
-# 1. flash-git__{add,remove}.sh must be in /usr/share/flash-git but not in /usr/local/bin
-# 2. check for such device is already registered as automount (with another alias)
-
 udevRulesPath=/etc/udev/rules.d/10-flash-git.rules
 if [ ! -f $udevRulesPath ]
 then
@@ -842,7 +839,7 @@ fi
 if [ ! -z $argDevice ]
 then
     source $tmpHardware
-    cand="KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"ID_manufacturer\", RUN+=\"/usr/share/flash-git/flash-git__add.sh /dev/%k%n\""
+    cand="KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"${ID_manufacturer}\", RUN+=\"/usr/share/flash-git/flash-git__add.sh /dev/%k%n\""
 
     existen=false
     while read -r line
