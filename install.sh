@@ -8,7 +8,7 @@ then
     exit 1
 fi
 
-if [ -f /usr/local/bin/flash-git ]
+if [ -f /usr/local/bin/flash-git ] || [ -d /usr/share/flash-git ]
 then
     echo "already installed. Error."
     exit 1
@@ -35,3 +35,10 @@ then
 else
     echo "bash-completions not set for flash-git because of bash-completion not found on the system"
 fi
+
+mkdir /usr/share/flash-git
+
+for i in add remove
+do
+    ln -s $(pwd)/flash-git__${i}.sh /usr/local/bin/
+done

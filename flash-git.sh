@@ -31,7 +31,7 @@ USAGE:
   $ flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
 
   unchain media from local repositories:
-  $ flash-git --free
+  $ flash-git --free # boris here 6
     flash-git will ask you for media to free
 
   restore media via local repositories
@@ -589,55 +589,70 @@ then
     mkdir /usr/share/flash-git
 fi
 
+tmpHardware=$(mktemp)
+if [[ -z $argDevice ]]
+then
+    if [[ -z "$argRepoList" ]]
+    then
+        argAlias=$(cat fakeDevices/$argFakeDevice/alias)
+    fi
+    cat fakeDevices/$argFakeDevices/hardware > $tmpHardware
+else
+    if [[ -z "$argRepoList" ]]
+    then
+        prelmount=$(mktemp -d)
+        mount $argDevice $prelmount
+        if [[ ! -r $prelmount/alias ]]
+        then
+            echo "incorrect media..."
+            exit 1
+        fi
+        argAlias=$(cat $prelmount/alias)
+        umount $prelmount
+        rm -rf $prelmount
+    fi
+
+    for i in idVendor idProduct serial product manufacturer
+    do
+        var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
+        echo ID_$i=$var >> $tmpHardware
+    done
+fi
+pushd /usr/share/flash-git
+for i in $(seq 100)
+do
+    if [[ -d $i ]]
+    then
+        if [[ $argAlias == $i/alias ]] && cmp -s $tmpHardware $i/hardware
+        then
+            echo "this media already registered with such alias. Please unregiser registered previously or try another alias"
+            exit 1
+        fi
+    fi
+done
+workdir=
+for i in $(seq 100)
+do
+    if [[ ! -d $i]]
+    then
+        mkdir $i
+        echo $argAlias > $i/alias
+        mv $tmpHardware $i/hardware
+        workdir=/usr/share/flash-git/$i
+        break
+    fi
+done
+popd
+if [[ -z $workdir ]]
+then
+    echo "Too many devices already registered. Rejected."
+    exit 1
+fi
+
 if [[ ! -z "$argRepoList" ]]
 then
-    hardwareFile=
-    workdir=
-    pushd /usr/share/flash-git
-    #for i in $(seq 100)
-    #do
-    #    if [[ -d $i ]]
-    #    then
-    #        echo "Such alias already exists"
-    #        exit 1
-    #    fi
-    #done
-    for i in $(seq 100)
-    do
-        if [[ ! -d $i ]]
-        then
-            mkdir $i
-            echo $argAlias > $i/alias
-            cp "$argRepoList" $i/repos
-            workdir=/usr/share/flash-git/$i
-            hardwareFile=$workdir/hardware
-            echo -n hardware
-            break
-        fi
-    done
-    popd
-    if [[ -z $hardwareFile ]]
-    then
-        echo "Too many devices already registered. Rejected."
-        exit 1
-    fi
-
-	#rm -rf /usr/share/flash-git
-    if [ ! -z "$argDevice" ]
-    then
-        for i in idVendor idProduct serial product manufacturer
-        do
-            var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
-            echo ID_$i=$var >> $hardwareFile
-        done
-    else # argFakeDevice is not null
-        cp fakeDevices/"$argFakeDevice"/hardware $hardwareFile
-    fi
-
-
-	source $hardwareFile
+	#source $hardwareFile
 	#echo $ID_SERIAL
-
 
 	rm -rf $workdir/root
 	mkdir $workdir/root
@@ -681,21 +696,21 @@ else
     tempdir=$(mktemp -d)
     if [ ! -z "$argDevice" ]
     then
-        #rm -rf root
-        mkdir $tempdir/root
-        mount $1 $tempdir/root
+        rm -rf $workdir/root
+        mkdir $workdir/root
+        mount $1 $workdir/root
     else # argFakeDevice is not null
         if [ ! -d fakeDevices/"$argFakeDevice"/root ]
         then
             mkdir -p fakeDevices/"$argFakeDevice"/root
         fi
-        ln -s $(pwd)/fakeDevices/"$argFakeDevice"/root $tempdir/
+        ln -s $(pwd)/fakeDevices/"$argFakeDevice"/root $workdir/root
     fi
-	if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
-	then
-		echo "reinitializing? Rejected."
-		#exit 1
-	fi
+	#if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
+	#then
+	#	echo "reinitializing? Rejected."
+	#	#exit 1
+	#fi
 
 	while read -r line
 	do
@@ -710,9 +725,8 @@ else
 			echo "Path '$line' already existen. FAILED."
 			exit 1
 		fi
-		#mkdir -p "$tmp" # boris e: we change ownership only for leaf directory not for whole path. It is incorrect.
         su ${argUser} -c "mkdir -p \"$tmp\""
-		repopath=$(pwd)/root/"$(basename $line).git"
+		repopath=$workdir/root/"$(basename $line).git"
 		git clone "$repopath" "$tmp"
 		pushd "$tmp"
 		git remote rename origin flash-git
@@ -720,7 +734,7 @@ else
 		chown -R $argUser "$tmp"
 		chgrp -R $argGroup "$tmp"
 	done < root/repos
-	echo $hostid >> root/hosts
+	#echo $hostid >> root/hosts
 
     if [ ! -z $argDevice ]
     then
@@ -731,84 +745,90 @@ else
     fi
 fi
 
+#=====================
+#exit 0
+
 mediaPath=$(pwd)
 
-echo "#!/bin/bash
-# flash-git version: $FLASH_GIT_VERSION
+#echo "#!/bin/bash
+## flash-git version: $FLASH_GIT_VERSION
+#
+#if [ ! \$(id -u) -eq 0 ]
+#then
+#    echo Run this under ROOT only!
+#    exit 1
+#fi
+#
+#
+##r=\$(mktemp -d)
+##pushd \$r
+#
+#if [ ! -d \"$mediaPath\" ]
+#then
+#    echo flash-git config lost
+#    exit 1
+#fi
+#
+#pushd \"$mediaPath\"
+#rm -rf root
+#if [ -z \"$argDevice\" ]
+#then
+#    #ln -s fakeDevices/"$argFakeDevice" root
+#    if [[ ! -r fakeDevices/\"\$1\"/hardware ]]
+#    then
+#        echo Please specify a fake device to set as your repository carrier
+#        exit 1
+#    fi
+#    ln -s fakeDevices/\"\$1\"/root root
+#else
+#    if [[ ! -b \"\$1\" ]]
+#    then
+#        echo Please specify a device to set as your repository carrier
+#        exit 1
+#    fi
+#    mkdir root
+#    mount \"\$1\" root
+#fi
+#if [ ! -r root/repos ]
+#then
+#    echo \"\\\"repos\\\" not found\"
+#    exit 1
+#fi
+#for oRepo in \$(cat root/repos) # boris e: read per-entire-line instead of split by space-symbols
+#do
+#	echo \"repo:  \$oRepo\"
+#    tmp=\"\$oRepo\"
+#    if [ ! -z \"$argSandbox\" ]
+#    then
+#        tmp=\"$(pwd)/sandboxes/\"\$2\"/\$oRepo\"
+#    fi
+#    pushd \"\$tmp\"
+#	git pull flash-git
+#	git push flash-git
+#	git pull flash-git
+#	popd
+#done
+#if [ -z \""$argDevice\"" ]
+#then
+#    rm root
+#else
+#    umount root
+#    rm -rf root
+#fi
+#popd # $mediaPath
+#
+#" > flash-git__add.sh
 
-if [ ! \$(id -u) -eq 0 ]
-then
-    echo Run this under ROOT only!
-    exit 1
-fi
-
-
-#r=\$(mktemp -d)
-#pushd \$r
-
-if [ ! -d \"$mediaPath\" ]
-then
-    echo flash-git config lost
-    exit 1
-fi
-
-pushd \"$mediaPath\"
-rm -rf root
-if [ -z \"$argDevice\" ]
-then
-    #ln -s fakeDevices/"$argFakeDevice" root
-    if [[ ! -r fakeDevices/\"\$1\"/hardware ]]
-    then
-        echo Please specify a fake device to set as your repository carrier
-        exit 1
-    fi
-    ln -s fakeDevices/\"\$1\"/root root
-else
-    if [[ ! -b \"\$1\" ]]
-    then
-        echo Please specify a device to set as your repository carrier
-        exit 1
-    fi
-    mkdir root
-    mount \"\$1\" root
-fi
-if [ ! -r root/repos ]
-then
-    echo \"\\\"repos\\\" not found\"
-    exit 1
-fi
-for oRepo in \$(cat root/repos) # boris e: read per-entire-line instead of split by space-symbols
-do
-	echo \"repo:  \$oRepo\"
-    tmp=\"\$oRepo\"
-    if [ ! -z \"$argSandbox\" ]
-    then
-        tmp=\"$(pwd)/sandboxes/\"\$2\"/\$oRepo\"
-    fi
-    pushd \"\$tmp\"
-	git pull flash-git
-	git push flash-git
-	git pull flash-git
-	popd
-done
-if [ -z \""$argDevice\"" ]
-then
-    rm root
-else
-    umount root
-    rm -rf root
-fi
-popd # $mediaPath
-
-" > flash-git__add.sh
-
-echo "#!/bin/bash
-# flash-git version: $FLASH_GIT_VERSION
-" > flash-git__remove.sh
+#echo "#!/bin/bash
+## flash-git version: $FLASH_GIT_VERSION
+#" > flash-git__remove.sh
 
 chmod +x flash-git__{add,remove}.sh
 #chmod +x /usr/local/bin/flash-git__{add,remove}.sh
 
+# boris here:
+# 1. flash-git__{add,remove}.sh must be in /usr/share/flash-git but not in /usr/local/bin
+# 2. check for such device is already registered as automount (with another alias)
 if [ ! -z $argDevice ]
 then
     mv flash-git__add.sh /usr/local/bin/flash-git__add.sh
