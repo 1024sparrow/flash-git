@@ -12,6 +12,7 @@ fi
 tmpMounted=$(mktemp -d)
 mount $1 $tmpMounted
 #cp $tmpMounted/alias /home/boris/
+umount $tmpMounted
 exit 0
 #----------------------
 
