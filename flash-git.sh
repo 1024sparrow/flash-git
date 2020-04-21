@@ -29,22 +29,22 @@ USAGE:
   $ flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
 
   unchain media from local repositories:
-  $ flash-git --free # boris here 6
+  $ flash-git --free # boris here 4
     flash-git will ask you for media to free
 
   restore media via local repositories
-  $ flash-git --restore=<DEVICE> # boris here 4
-  $ flash-git --restore=<FAKE_DEVICE> # boris here 5
+  $ flash-git --restore=<DEVICE> # boris here 2
+  $ flash-git --restore=<FAKE_DEVICE> # boris here 3
 
   show using devices and repositories:
-  $ flash-git --show-registered # boris here 3
+  $ flash-git --show-registered # boris here 1
 
   create fake device:
   $ flash-git --create-fake-device=<FAKE_DEVICE>
-  $ flash-git --show-fake-device=<FAKE_DEVICE> # boris here 2
+  $ flash-git --show-fake-device=<FAKE_DEVICE>
   $ flash-git --create-sandbox=<SANDBOX> --user=<USER>
   $ flash-git --show-sandbox=<SANDBOX>
-  $ flash-git --list-fake-devices # boris here 1
+  $ flash-git --list-fake-devices
   $ flash-git --list-sandboxes
   $ flash-git --remove-fake-device=<FAKE_DEVICE>
   $ flash-git --remove-sandbox=<SANDBOX>
@@ -114,6 +114,9 @@ ${underline}Дополнительные аргументы для отладк�
 --sandbox=<ПЕСОЧНИЦА>
 	В указанной выше директории должен находиться файл ${bold}hostid${normal} с фейковым идентификатором хоста
 
+--show-registered
+    list auto-processing devices (not fake but real)
+
 --fake-insert=<СНИМОК_ФЛЕШКИ>
 	Проиграть имитацию того, что была вставлена флешка
 
@@ -157,6 +160,7 @@ fi
 # boris e: add checking for curent directory is the flash-git repository root
 
 allArgs=(
+    argShowRegistered
     argSandbox
     argFakeinsert
     argFakeRelease
@@ -177,6 +181,7 @@ allArgs=(
 )
 
 validArgsCombinations=(
+    "argShowRegistered"
     "argFakeinsert argSandbox"
     "argFakeRelease argSandbox"
     "argCreateFakeDevice"
@@ -264,6 +269,28 @@ function checkMediaDevice {
     fi
 }
 
+function showRegistered {
+    if [ -d /usr/share/flash-git ]
+    then
+        pushd /usr/share/flash-git
+        for i in $(seq 100)
+        do
+            if [ -d $i ]
+            then
+                echo "---- id: $i. ----"
+                tmp=$(cat $i/alias)
+                echo "alias: \"$tmp\""
+                echo "repositories:"
+                while read -r line
+                do
+                    # boris here
+                done < $i/repos # boris here: all right? Or $i/root/repos ?
+            fi
+        done
+        popd
+    fi
+}
+
 function insertFakeDevice {
     ./flash-git__add.sh "$1" "$2"
     exit 0
@@ -296,6 +323,8 @@ function showFakeMedia {
         exit 1
     fi
     source fakeDevices/"$1"/hardware
+    tmp=$(cat fakeDevices/"$1"/alias)
+    echo "Alias: \"$tmp\""
     for i in idVendor idProduct serial product manufacturer
     do
         tmp=ID_$i
@@ -380,6 +409,9 @@ do
     then
         argSandbox="${i:10}"
         checkArgSandbox "$argSandbox"
+    elif [[ $i == "--show-registered" ]]
+    then
+        argShowRegistered=true
     elif [[ ${i:0:14} == "--fake-insert=" ]]
     then
         argFakeinsert="${i:14}"
@@ -503,7 +535,12 @@ function checkArguments {
 
 checkArguments
 
-if [ $argFakeinsert ]
+if [ $argShowRegistered ]
+then
+    echo "show registered"
+    showRegistered
+    exit 0
+elif [ $argFakeinsert ]
 then
     echo "fake media insert"
     insertFakeDevice "$argFakeinsert" "$argSandbox"
