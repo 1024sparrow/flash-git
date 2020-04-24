@@ -723,8 +723,9 @@ then
     then
         #mkfs.ext4 $argDevice -d root && echo OK || echo FAILED
         umount $argDevice
-        mkfs.ext4 -L "$argAlias" $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp $workdir/alias $tmp/ && cp -rf $workdir/root/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
+        #mkfs.ext4 -L "$argAlias" $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp $workdir/alias $tmp/ && cp -rf $workdir/root/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
         #mkfs.ntfs --no-indexing --label "flash-git__$argAlias" --fast --force $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp -rf $workdir/root/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
+        mkfs.vfat -n "flash-git__$argAlias" $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp -rf $workdir/root/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
         rm -rf $workdir/root
     else # argFakeDevice is not null
         rm -rf fakeDevices/"$argFakeDevice"/root
