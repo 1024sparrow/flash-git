@@ -29,15 +29,16 @@ USAGE:
   $ flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
 
   unchain media from local repositories:
-  $ flash-git --free # boris here 4
+  $ flash-git --free
     flash-git will ask you for media to free
 
   restore media via local repositories
-  $ flash-git --restore=<DEVICE> # boris here 2
-  $ flash-git --restore=<FAKE_DEVICE> # boris here 3
+  $ flash-git --restore=<DEVICE> # boris here 1
+  $ flash-git --restore=<FAKE_DEVICE> # boris here 2
+  # boris here 3: flash-git__add.sh
 
   show using devices and repositories:
-  $ flash-git --show-registered # boris here 1
+  $ flash-git --show-registered
 
   create fake device:
   $ flash-git --create-fake-device=<FAKE_DEVICE>
@@ -157,9 +158,9 @@ then
     exit 1
 fi
 
-# boris e: add checking for curent directory is the flash-git repository root
-
 allArgs=(
+    argFree
+    argRestore
     argShowRegistered
     argSandbox
     argFakeinsert
@@ -181,6 +182,8 @@ allArgs=(
 )
 
 validArgsCombinations=(
+    "argFree"
+    "argRestore argAlias"
     "argShowRegistered"
     "argFakeinsert argSandbox"
     "argFakeRelease argSandbox"
@@ -269,25 +272,127 @@ function checkMediaDevice {
     fi
 }
 
+function detectHardwareForMedia {
+    # arguments:
+    #   1. device
+    #   2. file path to write hardware info
+    for i in idVendor idProduct serial product manufacturer
+    do
+        var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
+        echo "ID_$i=\"$var\"" >> $2
+    done
+}
+
+function normalizeUdevRules {
+    state=false
+    # 0 - "# local ID:" not appeared, do not pass any "KERNEL=="
+    # 1 - "# local ID:" appeared, do pass one "KERNEL=="
+    tmpfile=$(mktemp)
+    while read -r line
+    do
+        if [[ "${line:0:11}" == "# local ID:" ]]
+        then
+            state=true
+            echo "$line" >> $tmpfile
+        elif [[ "${line:0:8}" == "KERNEL==" ]]
+        then
+            if $state
+            then
+                echo "$line" >> $tmpfile
+                cat $tmpfile >> /etc/udev/rules.d/10-flash-git.rules
+                echo -n > $tmpfile
+                state=false
+            fi
+        else
+            echo "$line" >> /etc/udev/rules.d/10-flash-git.rules
+        fi
+    done < $1
+    rm $tmpfile
+}
+
+function freeMedia {
+    tmpHardware=$(mktemp)
+    detectHardwareForMedia $1 $tmpHardware
+
+    tmp=$(mktemp -d)
+    mount $1 $tmp
+    if [ ! -f $tmp/alias ]
+    then
+        umount $tmp
+        echo "this media is not registered"
+        exit 1
+    fi
+    alias=$(cat $tmp/alias)
+
+    pushd /usr/share/flash-git
+    for i in $(seq 100)
+    do
+        if [ -d $i ]
+        then
+            tmpAlias=$(cat $i/alias)
+            if [[ $alias == $tmpAlias ]] && cmp -s $tmpHardware $i/hardware
+            then
+                rm -rf $i
+                tmp2=$(mktemp)
+                while read -r line
+                do
+                    if [[ "$line" != "# local ID: $i" ]]
+                    then
+                        echo "$line" >> $tmp2
+                    fi
+                done < /etc/udev/rules.d/10-flash-git.rules
+                normalizeUdevRules $tmp2
+                rm $tmp2
+            fi
+            break
+        fi
+    done
+    popd
+    umount $tmp
+    rm -rf $tmpHardware $tmp
+}
+
+function checkRepolistAvailable { # boris here
+    # Arguments:
+    #   1. file with repolist
+    # exit 1, if any already exists (in /usr/share/flash-git)
+}
+
+function restoreMedia {
+    # arguments:
+    #   1. Device
+    #   2. Alias
+    pushd /usr/share/flash-git
+    for i in $(seq 100)
+    do
+        if [ -d $i ]
+        then
+            echo a
+            # boris here
+        fi
+    done
+    popd
+}
+
 function showRegistered {
     if [ -d /usr/share/flash-git ]
     then
-        pushd /usr/share/flash-git
+        pushd /usr/share/flash-git > /dev/null
         for i in $(seq 100)
         do
             if [ -d $i ]
             then
-                echo "---- id: $i. ----"
+                echo "---- id: $i ----"
                 tmp=$(cat $i/alias)
                 echo "alias: \"$tmp\""
                 echo "repositories:"
                 while read -r line
                 do
-                    # boris here
-                done < $i/repos # boris here: all right? Or $i/root/repos ?
+                    echo "  $line"
+                done < $i/repos
             fi
         done
-        popd
+        popd > /dev/null
     fi
 }
 
@@ -405,7 +510,15 @@ function removeSandbox {
 for i in $*
 do
     #echo $i
-    if [[ ${i:0:10} == "--sandbox=" ]]
+    if [[ ${i:0:7} == "--free=" ]]
+    then
+        argFree="${i:7}"
+        checkMediaDevice "$argFree"
+    elif [[ ${i:0:10} == "--restore=" ]]
+    then
+        argRestore="${i:10}"
+        checkMediaDevice "$argRestore"
+    elif [[ ${i:0:10} == "--sandbox=" ]]
     then
         argSandbox="${i:10}"
         checkArgSandbox "$argSandbox"
@@ -535,7 +648,16 @@ function checkArguments {
 
 checkArguments
 
-if [ $argShowRegistered ]
+if [ $argFree ]
+then
+    echo "free media"
+    freeMedia $argFree
+    exit 0
+elif [ $argRestore ]
+then
+    echo "restore media"
+    restoreMedia $argRestore $argAlias
+elif [ $argShowRegistered ]
 then
     echo "show registered"
     showRegistered
@@ -646,12 +768,7 @@ else
         umount $prelmount
         rm -rf $prelmount
     fi
-
-    for i in idVendor idProduct serial product manufacturer
-    do
-        var=$(udevadm info -a -n $argDevice | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
-        echo "ID_$i=\"$var\"" >> $tmpHardware
-    done
+    detectHardwareForMedia $argDevice $tmpHardware
 fi
 pushd /usr/share/flash-git
 for i in $(seq 100)
@@ -713,19 +830,17 @@ then
 		git push flash-git
 		popd
 	done
-	#cp -L "$argRepoList" root/repos # dereferencing if it's a symbolyc link
-	echo $hostid > $workdir/root/hosts
+	cp -L "$argRepoList" $workdir/repos # dereferencing if it's a symbolyc link
+	#echo $hostid > $workdir/root/hosts
 
     #copy_flashgit_into_dir root
-    echo $FLASH_GIT_VERSION > $workdir/root/flash_git_version
+    echo $FLASH_GIT_VERSION > $workdir/flash_git_version
 
     if [ ! -z "$argDevice" ]
     then
         #mkfs.ext4 $argDevice -d root && echo OK || echo FAILED
         umount $argDevice
-        #mkfs.ext4 -L "$argAlias" $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp $workdir/alias $tmp/ && cp -rf $workdir/root/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
-        #mkfs.ntfs --no-indexing --label "flash-git__$argAlias" --fast --force $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp -rf $workdir/root/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
-        mkfs.vfat -n "flash-git__$argAlias" $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp -rf $workdir/root/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
+        mkfs.vfat -n "fg_$argAlias" $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp -rf $workdir/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
         rm -rf $workdir/root
     else # argFakeDevice is not null
         rm -rf fakeDevices/"$argFakeDevice"/root
@@ -878,21 +993,29 @@ if [ ! -z $argDevice ]
 then
     source $tmpHardware
     cand="KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"${ID_manufacturer}\", RUN+=\"/usr/share/flash-git/flash-git__add.sh /dev/%k%n\""
+    candIdMark="# local ID: $localId"
 
+    tmp=$(mktemp)
     existen=false
     while read -r line
     do
         if [[ "$line" == "$cand" ]]
         then
             existen=true
+            echo "$candIdMark" >> $tmp
+            echo "$line" >> $tmp
             break
         fi
+        echo "$line" >> $tmp
     done < $udevRulesPath
 
-    if ! $existen
+    if $existen
     then
-        echo "# local ID: $localId" >> $udevRulesPath
+        cat $tmp > $udevRulesPath
+    else
+        echo "$candIdMark" >> $udevRulesPath
         echo "$cand" >> $udevRulesPath
         udevadm control --reload-rules && udevadm trigger
     fi
+    rm $tmp
 fi
