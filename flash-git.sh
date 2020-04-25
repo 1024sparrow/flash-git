@@ -29,7 +29,7 @@ USAGE:
   $ flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
 
   unchain media from local repositories:
-  $ flash-git --free # boris here 1
+  $ flash-git --free
     flash-git will ask you for media to free
 
   restore media via local repositories
@@ -380,7 +380,6 @@ function burnFlash {
 function restoreMedia {
     # arguments:
     #   1. Device
-    #   2. Alias
 
     showRegistered
     echo -n "
@@ -393,13 +392,13 @@ Select internal ID: "
         exit 1
     fi
     detectHardwareForMedia $1 /usr/share/flash-git/$internalId/hardware
-    echo "$2" > /usr/share/flash-git/$internalId/alias
     if ! burnFlash $1 $internalId
     then
         echo "FAILED"
         exit 1
     fi
     popd
+    # boris here: udev.rules
 }
 
 function showRegistered {
