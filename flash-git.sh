@@ -7,6 +7,8 @@ declare -i FLASH_GIT_VERSION=0
 #bold=`tput bold`
 #normal=`tput sgr0`
 
+udevRulesPath=/etc/udev/rules.d/10-flash-git.rules
+
 for i in $*
 do
 	if [[ "$i" == "--help" || $i == "-h" ]]
@@ -36,8 +38,8 @@ USAGE:
   $ flash-git --restore=<DEVICE>
   previously flash-drive will be discarded
   $ flash-git --restore=<FAKE_DEVICE> # boris e
-  # boris here 2: flash-git__add.sh
-  # boris here 3: add flags, path replacement, udev-replacable (for Windows and MacOS compatibility)
+  # boris here 1: flash-git__add.sh
+  # boris here 2: add flags, path replacement, udev-replacable (for Windows and MacOS compatibility)
 
   show using devices and repositories:
   $ flash-git --show-registered
@@ -313,10 +315,17 @@ function normalizeUdevRules {
 }
 
 function freeMedia {
-    showRegistered
-    echo -n "
+    # if argument set: only delete from udev.rules
+    # request localID for device and totally delete that
+    if [ $1 ]
+    then
+        internalId=$1
+    else
+        showRegistered
+        echo -n "
 Select internal ID: "
-    read internalId
+        read internalId
+    fi
     pushd /usr/share/flash-git
     if [ ! -d $internalId ]
     then
@@ -337,11 +346,47 @@ Select internal ID: "
     normalizeUdevRules $tmp
     udevadm control --reload-rules && udevadm trigger
     rm $tmp
-    rm -rf $internalId
+    if [ -z "$1" ]
+    then
+        rm -rf $internalId
+    fi
 
     popd # internalId
     popd # /usr/share/flash-git
 
+}
+
+function addMediaToUdev {
+    # Arguments:
+    #   1. Hardware file
+    #   2. Internal ID
+    source $1
+    cand="KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"${ID_manufacturer}\", RUN+=\"/usr/share/flash-git/flash-git__add.sh /dev/%k%n\""
+    candIdMark="# local ID: $2"
+
+    tmpUdev=$(mktemp)
+    existen=false
+    while read -r line
+    do
+        if [[ "$line" == "$cand" ]]
+        then
+            existen=true
+            echo "$candIdMark" >> $tmpUdev
+            echo "$line" >> $tmpUdev
+            break
+        fi
+        echo "$line" >> $tmpUdev
+    done < $udevRulesPath
+
+    if $existen
+    then
+        cat $tmpUdev > $udevRulesPath
+    else
+        echo "$candIdMark" >> $udevRulesPath
+        echo "$cand" >> $udevRulesPath
+        udevadm control --reload-rules && udevadm trigger
+    fi
+    rm $tmpUdev
 }
 
 function checkRepolistAvailable {
@@ -398,7 +443,14 @@ Select internal ID: "
         exit 1
     fi
     popd
+
     # boris here: udev.rules
+    freeMedia $internalId
+
+    tmp=$(mktemp)
+    detectHardwareForMedia $1 $tmp
+    addMediaToUdev $tmp $internalId
+    rm $tmp
 }
 
 function showRegistered {
@@ -1028,40 +1080,13 @@ mediaPath=$(pwd)
 #chmod +x flash-git__{add,remove}.sh
 #chmod +x /usr/local/bin/flash-git__{add,remove}.sh
 
-udevRulesPath=/etc/udev/rules.d/10-flash-git.rules
 if [ ! -f $udevRulesPath ]
 then
     echo "# Edit this file ONLY via "flash-git" utility. Do not edit this manually!
 " > $udevRulesPath
 fi
 
-if [ ! -z $argDevice ]
+if [ $argDevice ]
 then
-    source $tmpHardware
-    cand="KERNEL==\"sd[b-z]*\", ATTRS{idVendor}==\"${ID_idVendor}\", ATTRS{idProduct}==\"${ID_idProduct}\", ATTRS{serial}==\"${ID_serial}\", ATTRS{product}==\"${ID_product}\", ATTRS{manufacturer}==\"${ID_manufacturer}\", RUN+=\"/usr/share/flash-git/flash-git__add.sh /dev/%k%n\""
-    candIdMark="# local ID: $localId"
-
-    tmp=$(mktemp)
-    existen=false
-    while read -r line
-    do
-        if [[ "$line" == "$cand" ]]
-        then
-            existen=true
-            echo "$candIdMark" >> $tmp
-            echo "$line" >> $tmp
-            break
-        fi
-        echo "$line" >> $tmp
-    done < $udevRulesPath
-
-    if $existen
-    then
-        cat $tmp > $udevRulesPath
-    else
-        echo "$candIdMark" >> $udevRulesPath
-        echo "$cand" >> $udevRulesPath
-        udevadm control --reload-rules && udevadm trigger
-    fi
-    rm $tmp
+    addMediaToUdev $tmpHardware $localId
 fi
