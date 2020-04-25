@@ -29,14 +29,15 @@ USAGE:
   $ flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
 
   unchain media from local repositories:
-  $ flash-git --free
+  $ flash-git --free # boris here 1
     flash-git will ask you for media to free
 
   restore media via local repositories
-  $ flash-git --restore=<DEVICE> # boris here 1
-  $ flash-git --restore=<FAKE_DEVICE> # boris here 2
-  # boris here 3: flash-git__add.sh
-  # boris here 4: add flags, path replacement, udev-replacable (for Windows and MacOS compatibility)
+  $ flash-git --restore=<DEVICE>
+  previously flash-drive will be discarded
+  $ flash-git --restore=<FAKE_DEVICE> # boris e
+  # boris here 2: flash-git__add.sh
+  # boris here 3: add flags, path replacement, udev-replacable (for Windows and MacOS compatibility)
 
   show using devices and repositories:
   $ flash-git --show-registered
@@ -353,25 +354,61 @@ function freeMedia {
     rm -rf $tmpHardware $tmp
 }
 
-function checkRepolistAvailable { # boris here
+function checkRepolistAvailable {
     # Arguments:
     #   1. file with repolist
     # exit 1, if any already exists (in /usr/share/flash-git)
+    while read -r line
+    do
+        for i in $(seq 100)
+        do
+            while read -r lineStored
+            do
+                if [[ "$line" == "$lineStored" ]]
+                then
+                    return 1
+                fi
+            done < /usr/share/flash-git/$i/repos
+        done
+    done < $1
+    return 0
+}
+
+function burnFlash {
+    # Arguments:
+    #   1. device
+    #   2. localId
+    umount $1
+    #mkfs.ext4 $argDevice -d root && echo OK || echo FAILED
+    pushd /usr/share/flash-git/$2
+    tmpAlias=$(cat alias)
+    mkfs.vfat -n "fg_$tmpAlias" $1 && tmp=$(mktemp -d) && mount $1 $tmp && cp -rf * $tmp/ && umount $tmp && rm -rf $tmp && retval=0 || retval=1
+    popd
+    return $retval
 }
 
 function restoreMedia {
     # arguments:
     #   1. Device
     #   2. Alias
+
+    showRegistered
+    echo -n "
+Select internal ID for selected: "
+    read internalId
     pushd /usr/share/flash-git
-    for i in $(seq 100)
-    do
-        if [ -d $i ]
-        then
-            echo a
-            # boris here
-        fi
-    done
+    if [ ! -d $internalId ]
+    then
+        echo "incorrect selection"
+        exit 1
+    fi
+    detectHardwareForMedia $1 /usr/share/flash-git/$internalId/hardware
+    echo "$2" > /usr/share/flash-git/$internalId/alias
+    if ! burnFlash $1 $internalId
+    then
+        echo "FAILED"
+        exit 1
+    fi
     popd
 }
 
@@ -658,6 +695,7 @@ elif [ $argRestore ]
 then
     echo "restore media"
     restoreMedia $argRestore $argAlias
+    exit 0
 elif [ $argShowRegistered ]
 then
     echo "show registered"
@@ -783,6 +821,26 @@ do
         fi
     fi
 done
+
+if [ "$argRepoList" ]
+then
+    if checkRepolistAvailable "$argRepoList"
+    then
+        echo "you already have registered media for at least one repository"
+        exit 1
+    fi
+else
+    tmp=$(mktemp)
+    mount $argDevice $tmp && if checkRepolistAvailable $tmp/repos
+    then
+        umount $tmp
+        echo "this media trails at least one repository you already have"
+        exit 1
+    fi
+    umount $tmp
+    rm -rf $tmp
+fi
+
 workdir=
 localId=-1
 for i in $(seq 100)
@@ -839,9 +897,7 @@ then
 
     if [ ! -z "$argDevice" ]
     then
-        #mkfs.ext4 $argDevice -d root && echo OK || echo FAILED
-        umount $argDevice
-        mkfs.vfat -n "fg_$argAlias" $argDevice && tmp=$(mktemp -d) && mount $argDevice $tmp && cp -rf $workdir/* $tmp/ && umount $tmp && rm -rf $tmp && echo OK || echo FAILED
+        burnFlash $argDevice $localId
         rm -rf $workdir/root
     else # argFakeDevice is not null
         rm -rf fakeDevices/"$argFakeDevice"/root
