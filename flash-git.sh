@@ -444,7 +444,6 @@ Select internal ID: "
     fi
     popd
 
-    # boris here: udev.rules
     freeMedia $internalId
 
     tmp=$(mktemp)
