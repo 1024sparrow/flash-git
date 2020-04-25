@@ -40,10 +40,8 @@ USAGE:
   $ flash-git --restore=<FAKE_DEVICE> # boris e
   # boris here e: udev-replaceable (for Windows and MacOS compatibility)
 
-  # boris here 1: repolist: path replacement
-  # boris here 2: add flags
-  # boris here 3: version checking for medias from the future
-  # boris here 4: flash-git__add.sh
+  # boris here 1: version checking for medias from the future
+  # boris here 2: flash-git__add.sh
 
   show using devices and repositories:
   $ flash-git --show-registered
@@ -893,6 +891,7 @@ do
     then
         mkdir $i
         echo $argAlias > $i/alias
+        echo 0 > $i/flags
         cp $tmpHardware $i/hardware
         workdir=/usr/share/flash-git/$i
         localId=$i
