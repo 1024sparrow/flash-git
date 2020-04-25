@@ -313,45 +313,35 @@ function normalizeUdevRules {
 }
 
 function freeMedia {
-    tmpHardware=$(mktemp)
-    detectHardwareForMedia $1 $tmpHardware
-
-    tmp=$(mktemp -d)
-    mount $1 $tmp
-    if [ ! -f $tmp/alias ]
+    showRegistered
+    echo -n "
+Select internal ID: "
+    read internalId
+    pushd /usr/share/flash-git
+    if [ ! -d $internalId ]
     then
-        umount $tmp
-        echo "this media is not registered"
+        echo "incorrect selection"
         exit 1
     fi
-    alias=$(cat $tmp/alias)
+    pushd $internalID
+    tmpAlias=$(cat alias)
 
-    pushd /usr/share/flash-git
-    for i in $(seq 100)
+    tmp=$(mktemp)
+    while read -r line
     do
-        if [ -d $i ]
+        if [[ "$line" != "# local ID: $internalId" ]]
         then
-            tmpAlias=$(cat $i/alias)
-            if [[ $alias == $tmpAlias ]] && cmp -s $tmpHardware $i/hardware
-            then
-                rm -rf $i
-                tmp2=$(mktemp)
-                while read -r line
-                do
-                    if [[ "$line" != "# local ID: $i" ]]
-                    then
-                        echo "$line" >> $tmp2
-                    fi
-                done < /etc/udev/rules.d/10-flash-git.rules
-                normalizeUdevRules $tmp2
-                rm $tmp2
-            fi
-            break
+            echo "$line" >> $tmp
         fi
-    done
-    popd
-    umount $tmp
-    rm -rf $tmpHardware $tmp
+    done < /etc/udev/rules.d/10-flash-git.rules
+    normalizeUdevRules $tmp
+    udevadm control --reload-rules && udevadm trigger
+    rm $tmp
+    rm -rf $internalId
+
+    popd # internalId
+    popd # /usr/share/flash-git
+
 }
 
 function checkRepolistAvailable {
@@ -394,7 +384,7 @@ function restoreMedia {
 
     showRegistered
     echo -n "
-Select internal ID for selected: "
+Select internal ID: "
     read internalId
     pushd /usr/share/flash-git
     if [ ! -d $internalId ]
@@ -548,9 +538,9 @@ function removeSandbox {
 for i in $*
 do
     #echo $i
-    if [[ ${i:0:7} == "--free=" ]]
+    if [[ $i == "--free" ]]
     then
-        argFree="${i:7}"
+        argFree=true
         checkMediaDevice "$argFree"
     elif [[ ${i:0:10} == "--restore=" ]]
     then
@@ -689,7 +679,7 @@ checkArguments
 if [ $argFree ]
 then
     echo "free media"
-    freeMedia $argFree
+    freeMedia
     exit 0
 elif [ $argRestore ]
 then
