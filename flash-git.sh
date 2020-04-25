@@ -38,8 +38,12 @@ USAGE:
   $ flash-git --restore=<DEVICE>
   previously flash-drive will be discarded
   $ flash-git --restore=<FAKE_DEVICE> # boris e
-  # boris here 1: flash-git__add.sh
-  # boris here 2: add flags, path replacement, udev-replacable (for Windows and MacOS compatibility)
+  # boris here e: udev-replaceable (for Windows and MacOS compatibility)
+
+  # boris here 1: repolist: path replacement
+  # boris here 2: add flags
+  # boris here 3: version checking for medias from the future
+  # boris here 4: flash-git__add.sh
 
   show using devices and repositories:
   $ flash-git --show-registered
