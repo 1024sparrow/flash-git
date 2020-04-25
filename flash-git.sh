@@ -254,22 +254,22 @@ function checkArgRepoList {
         echo "Repositories list \"$1\": file not found"
         exit 1
     fi
-    for i in $(cat "$1")
+    while read -r line
     do
-        tmp=$i
+        tmp="$line"
         if [ ! -z "$argSandbox" ]
         then
-            tmp=sandboxes/"$argSandbox"/$i
+            tmp=sandboxes/"$argSandbox"/"$line"
         fi
         if [ ! -d "$tmp" ]
         then
-            echo "repository not found: $i"
+            echo "repository not found: $line"
             exit 1
         fi
         pushd "$tmp"
-        git status &> /dev/null || (echo "directory \"$i\" not initialized as git-repository"; exit 1)
+        git status &> /dev/null || (echo "directory \"$line\" not initialized as git-repository"; exit 1)
         popd
-    done
+    done < "$1"
 }
 
 function checkMediaDevice {
@@ -913,17 +913,24 @@ then
 
 	rm -rf $workdir/root
 	mkdir $workdir/root
-	for i in $(cat "$argRepoList")
+    echo -n > $workdir/repos
+    while read -r line
 	do
-        tmp=$i
+        tmp=$(realpath "line") # get absolute path
+        if [[ $tmp == "$HOME"/* ]] # replace HomeDir for "~"
+        then
+            t=${#HOME}
+            tmp=~${tmp:$t}
+        fi
+        # boris here: transform path
         if [ ! -z "$argSandbox" ]
         then
-            tmp=sandboxes/"$argSandbox"/$i
+            tmp=sandboxes/"$argSandbox"/"$line"
         fi
-		echo $tmp
+		echo "$tmp"
 		repopath=$workdir/root/$(basename $tmp).git # boris e: add check for repositories names are all unique
 		git init --bare --shared=true "$repopath"
-		pushd $tmp
+		pushd "$tmp"
 		git remote remove flash-git
 		git remote add flash-git "$repopath"
 		for branch in $(git branch | cut -c 3-)
@@ -931,8 +938,9 @@ then
 			git push --set-upstream flash-git "$branch"
 		done
 		git push flash-git
-		popd
-	done
+        # boris here
+		popd # "$tmp"
+	done < "$argRepoList"
 	cp -L "$argRepoList" $workdir/repos # dereferencing if it's a symbolyc link
 	#echo $hostid > $workdir/root/hosts
 
