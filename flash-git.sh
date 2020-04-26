@@ -294,6 +294,7 @@ function normalizeUdevRules {
     state=false
     # 0 - "# local ID:" not appeared, do not pass any "KERNEL=="
     # 1 - "# local ID:" appeared, do pass one "KERNEL=="
+    echo -n > /etc/udev/rules.d/10-flash-git.rules
     tmpfile=$(mktemp)
     while read -r line
     do
@@ -335,7 +336,7 @@ Select internal ID: "
         echo "incorrect selection"
         exit 1
     fi
-    pushd $internalID
+    pushd $internalId
     tmpAlias=$(cat alias)
 
     tmp=$(mktemp)
@@ -349,12 +350,11 @@ Select internal ID: "
     normalizeUdevRules $tmp
     udevadm control --reload-rules && udevadm trigger
     rm $tmp
+    popd # internalId
     if [ -z "$1" ]
     then
         rm -rf $internalId
     fi
-
-    popd # internalId
     popd # /usr/share/flash-git
 
 }
@@ -400,13 +400,16 @@ function checkRepolistAvailable {
     do
         for i in $(seq 100)
         do
-            while read -r lineStored
-            do
-                if [[ "$line" == "$lineStored" ]]
-                then
-                    return 1
-                fi
-            done < /usr/share/flash-git/$i/repos
+            if [ -d /usr/share/flash-git/$i ]
+            then
+                while read -r lineStored
+                do
+                    if [[ "$line" == "$lineStored" ]]
+                    then
+                        return 1
+                    fi
+                done < /usr/share/flash-git/$i/repos
+            fi
         done
     done < $1
     return 0
@@ -594,7 +597,6 @@ do
     if [[ $i == "--free" ]]
     then
         argFree=true
-        checkMediaDevice "$argFree"
     elif [[ ${i:0:10} == "--restore=" ]]
     then
         argRestore="${i:10}"
@@ -625,6 +627,12 @@ do
     elif [[ ${i:0:12} == "--repo-list=" ]]
     then
         argRepoList="${i:12}"
+        if [ ! -r "$argRepoList" ]
+        then
+            echo "file \"$argRepoList\" not found"
+            exit 1
+        fi
+        argRepoList=$(realpath "$argRepoList")
     elif [[ ${i:0:9} == "--device=" ]]
     then
         argDevice="${i:9}"
@@ -867,14 +875,14 @@ done
 
 if [ "$argRepoList" ]
 then
-    if checkRepolistAvailable "$argRepoList"
+    if ! checkRepolistAvailable $(realpath "$argRepoList")
     then
         echo "you already have registered media for at least one repository"
         exit 1
     fi
 else
     tmp=$(mktemp)
-    mount $argDevice $tmp && if checkRepolistAvailable $tmp/repos
+    mount $argDevice $tmp && if ! checkRepolistAvailable $tmp/repos
     then
         umount $tmp
         echo "this media trails at least one repository you already have"
@@ -911,6 +919,7 @@ then
 	#source $hardwareFile
 	#echo $ID_SERIAL
 
+    #su $2 -c "mkdir -p sandboxes/\"$1\""
 	rm -rf $workdir/root
 	mkdir $workdir/root
     echo -n > $workdir/repos
