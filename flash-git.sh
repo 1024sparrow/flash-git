@@ -41,7 +41,8 @@ USAGE:
   # boris here e: udev-replaceable (for Windows and MacOS compatibility)
 
   # boris here 1: version checking for medias from the future
-  # boris here 2: flash-git__add.sh
+  # boris here 2: encoding by mounting
+  # boris here 3: flash-git__add.sh
 
   show using devices and repositories:
   $ flash-git --show-registered
@@ -921,7 +922,6 @@ then
             t=${#HOME}
             tmp=~${tmp:$t}
         fi
-        # boris here: transform path
         if [ ! -z "$argSandbox" ]
         then
             tmp=sandboxes/"$argSandbox"/"$line"
@@ -960,9 +960,19 @@ else
     tempdir=$(mktemp -d)
     if [ ! -z "$argDevice" ]
     then
-        rm -rf $workdir/root
-        mkdir $workdir/root
-        mount $1 $workdir/root
+        mount $argDevice $tempdir
+        cp -rf $tempdir/* $workdir/
+        umount $tempdir
+        rm -rf $tempdir
+        #rm -rf $workdir/root
+        #ln -s $tempdir/root $workdir/
+        if [ $(cat $tempdir/flash_git_version) -gt $FLASH_GIT_VERSION ]
+        then
+            echo "you need to update flash-git to work with this device"
+            umount $tempdir
+            rm -rf $tempdir
+            exit 1
+        fi
     else # argFakeDevice is not null
         if [ ! -d fakeDevices/"$argFakeDevice"/root ]
         then
@@ -978,7 +988,8 @@ else
 
 	while read -r line
 	do
-		echo "${underline}${line}${nounderline}":
+		echo "
+${underline}${line}${nounderline}":
         tmp="$line"
         if [ ! -z "$argSandbox" ]
         then
@@ -997,16 +1008,19 @@ else
 		popd
 		chown -R $argUser "$tmp"
 		chgrp -R $argGroup "$tmp"
-	done < root/repos
+	done < $workdir/repos
 	#echo $hostid >> root/hosts
 
-    if [ ! -z $argDevice ]
-    then
-        umount root
-        rm -rf root
-    else
-        rm root
-    fi
+    rm -rf $workdir/root
+    #umount $tempdir
+    #rm -rf $tempdir
+    #if [ ! -z $argDevice ]
+    #then
+    #    umount $workdir/root
+    #    rm -rf $workdir/root
+    #else
+    #    rm root
+    #fi
 fi
 
 #=====================
