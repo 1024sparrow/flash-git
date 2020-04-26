@@ -925,18 +925,18 @@ then
     echo -n > $workdir/repos
     while read -r line
 	do
-        tmp=$(realpath "line") # get absolute path
-        if [[ $tmp == "$HOME"/* ]] # replace HomeDir for "~"
+        tmp=$(realpath "$line") # get absolute path
+        if [[ $tmp == "$HOME/"* ]] # replace HomeDir for "~"
         then
             t=${#HOME}
-            tmp=~${tmp:$t}
+            tmp=~/${tmp:$t}
         fi
-        if [ ! -z "$argSandbox" ]
+        if [ "$argSandbox" ]
         then
             tmp=sandboxes/"$argSandbox"/"$line"
         fi
-		echo "$tmp"
 		repopath=$workdir/root/$(basename $tmp).git # boris e: add check for repositories names are all unique
+        mkdir $repopath
 		git init --bare --shared=true "$repopath"
 		pushd "$tmp"
 		git remote remove flash-git
@@ -946,7 +946,6 @@ then
 			git push --set-upstream flash-git "$branch"
 		done
 		git push flash-git
-        # boris here
 		popd # "$tmp"
 	done < "$argRepoList"
 	cp -L "$argRepoList" $workdir/repos # dereferencing if it's a symbolyc link
