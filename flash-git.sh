@@ -967,21 +967,19 @@ then
 
 else
     tempdir=$(mktemp -d)
-    if [ ! -z "$argDevice" ]
+    if [ "$argDevice" ]
     then
         mount $argDevice $tempdir
-        cp -rf $tempdir/* $workdir/
-        umount $tempdir
-        rm -rf $tempdir
+        cp -rf $tempdir/* $workdir/ # boris e
         #rm -rf $workdir/root
         #ln -s $tempdir/root $workdir/
         if [ $(cat $tempdir/flash_git_version) -gt $FLASH_GIT_VERSION ]
         then
             echo "you need to update flash-git to work with this device"
-            umount $tempdir
-            rm -rf $tempdir
             exit 1
         fi
+        umount $tempdir
+        rm -rf $tempdir
     else # argFakeDevice is not null
         if [ ! -d fakeDevices/"$argFakeDevice"/root ]
         then
@@ -1006,9 +1004,21 @@ ${underline}${line}${nounderline}":
         fi
 		if [ -d "$tmp" ]
 		then
+            rm -rf $workdir
 			echo "Path '$line' already existen. FAILED."
 			exit 1
 		fi
+	done < $workdir/repos
+
+	while read -r line
+	do
+		echo "
+${underline}${line}${nounderline}":
+        tmp="$line"
+        if [ ! -z "$argSandbox" ]
+        then
+            tmp=sandboxes/"$argSandbox"/"$line"
+        fi
         su ${argUser} -c "mkdir -p \"$tmp\""
 		repopath=$workdir/root/"$(basename $line).git"
 		git clone "$repopath" "$tmp"
