@@ -906,7 +906,7 @@ then
     exit 1
 fi
 
-if [[ ! -z "$argRepoList" ]]
+if [ "$argRepoList" ]
 then
 	#source $hardwareFile
 	#echo $ID_SERIAL
