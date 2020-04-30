@@ -40,8 +40,6 @@ USAGE:
   $ flash-git --restore=<FAKE_DEVICE> # boris e
   # boris here e: udev-replaceable (for Windows and MacOS compatibility)
 
-  # boris here 1: flash-git__add.sh
-
   show using devices and repositories:
   $ flash-git --show-registered
 

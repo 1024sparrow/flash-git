@@ -3,6 +3,17 @@
 
 # $USER is empty
 
+function detectHardwareForMedia {
+    # arguments:
+    #   1. device
+    #   2. file path to write hardware info
+    for i in idVendor idProduct serial product manufacturer
+    do
+        var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
+        echo "ID_$i=\"$var\"" >> $2
+    done
+}
+
 if [ ! $(id -u) -eq 0 ]
 then
     echo Run this under ROOT only!
@@ -10,9 +21,51 @@ then
 fi
 
 tmpMounted=$(mktemp -d)
-mount $1 $tmpMounted
+tmpHardware=$(mktemp)
+detectHardwareForMedia $1 $tmpHardware
+mount $1 -tvfat -o"iocharset=utf8" $tmpMounted
 #cp $tmpMounted/alias /home/boris/
+workdir=
+pushd /usr/share/flash-git
+for i in $(seq 100)
+do
+    if [ -d $i ]
+    then
+        if [[ $(cat $tmpMounted/alias) == $(cat $i/alias) ]] && cmp -s $tmpHardware $i/hardware
+        then
+            if cmp -s $i/repos $tmpMounted/repos
+            then
+                workdir=/usr/share/flash-git/$i
+            else
+                echo "log about error"
+            fi
+            break
+        fi
+    fi
+done
+popd # /usr/share/flash-git
+
+if [ $workdir ]
+then
+    ln -s $tmpMounted/root $workdir/root
+    while read -r line
+    do
+        tmp="$line"
+        pushd "$tmp"
+        git pull flash-git
+        git push flash-git
+        git pull flash-git
+        popd # "$tmp"
+    done < $workdir/repos
+    rm $workdir/root
+else
+    echo "log about error"
+fi
+
+
 umount $tmpMounted
+rm tmpHardware
+rm -rf tmpMounted
 exit 0
 #----------------------
 
