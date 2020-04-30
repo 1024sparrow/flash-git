@@ -923,12 +923,13 @@ then
     echo -n > $workdir/repos
     while read -r line
 	do
-        tmp=$(realpath "$line") # get absolute path
-        if [[ $tmp == "$HOME/"* ]] # replace HomeDir for "~"
-        then
-            t=${#HOME}
-            tmp=~/${tmp:$t}
-        fi
+        tmp="$line" # temporary stub. See lines below.
+        #tmp=$(realpath "$line") # get absolute path # boris e: resolve for $argUser
+        #if [[ $tmp == "$HOME/"* ]] # replace HomeDir for "~" # boris e: get $HOME for $argUser, not for root
+        #then
+        #    t=${#HOME}
+        #    tmp=~/${tmp:$t}
+        #fi
         if [ "$argSandbox" ]
         then
             tmp=sandboxes/"$argSandbox"/"$line"
