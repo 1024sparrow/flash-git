@@ -40,9 +40,7 @@ USAGE:
   $ flash-git --restore=<FAKE_DEVICE> # boris e
   # boris here e: udev-replaceable (for Windows and MacOS compatibility)
 
-  # boris here 1: version checking for medias from the future
-  # boris here 2: encoding by mounting
-  # boris here 3: flash-git__add.sh
+  # boris here 1: flash-git__add.sh
 
   show using devices and repositories:
   $ flash-git --show-registered
@@ -423,7 +421,7 @@ function burnFlash {
     #mkfs.ext4 $argDevice -d root && echo OK || echo FAILED
     pushd /usr/share/flash-git/$2
     tmpAlias=$(cat alias)
-    mkfs.vfat -n "fg_$tmpAlias" $1 && tmp=$(mktemp -d) && mount $1 $tmp && cp -rf * $tmp/ && umount $tmp && rm -rf $tmp && retval=0 || retval=1
+    mkfs.vfat -n "fg_$tmpAlias" $1 && tmp=$(mktemp -d) && mount $1 -tvfat -o"iocharset=utf8" $tmp && cp -rf * $tmp/ && umount $tmp && rm -rf $tmp && retval=0 || retval=1
     popd
     return $retval
 }
@@ -848,7 +846,7 @@ else
     if [[ -z "$argRepoList" ]]
     then
         prelmount=$(mktemp -d)
-        mount $argDevice $prelmount
+        mount $argDevice -tvfat -o"iocharset=utf8" $prelmount
         if [[ ! -r $prelmount/alias ]]
         then
             echo "incorrect media..."
@@ -882,7 +880,7 @@ then
     fi
 else
     tmp=$(mktemp)
-    mount $argDevice $tmp && if ! checkRepolistAvailable $tmp/repos
+    mount $argDevice -tvfat -o"iocharset=utf8" $tmp && if ! checkRepolistAvailable $tmp/repos
     then
         umount $tmp
         echo "this media trails at least one repository you already have"
@@ -968,7 +966,7 @@ else
     tempdir=$(mktemp -d)
     if [ "$argDevice" ]
     then
-        mount $argDevice $tempdir
+        mount $argDevice -tvfat -o"iocharset=utf8" $tempdir
         cp -rf $tempdir/* $workdir/ # boris e
         #rm -rf $workdir/root
         #ln -s $tempdir/root $workdir/
