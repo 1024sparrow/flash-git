@@ -204,6 +204,26 @@ validArgsCombinations=(
     "argFakeDevice argUser argGroup argSandbox"
 )
 
+function myMkfs {
+    # Arguments:
+    # 1. Device
+    # 2. Content directory
+
+    # mkfs.vfat -n "fg_$tmpAlias" $1 && tmp=$(mktemp -d) && myMount $1 $tmp && cp -rf * $tmp/ && umount $tmp && rm -rf $tmp && retval=0 || retval=1
+
+    mkfs.ext4 $1 -d $2
+}
+
+function myMount {
+    # Arguments:
+    # 1. Device
+    # 2. Directory
+
+    # mount $1 -tvfat -o"iocharset=utf8" $2
+
+    mount $1 $2
+}
+
 function checkArgSandbox {
     if [ ! -d sandboxes/"$1" ]
     then
@@ -417,9 +437,10 @@ function burnFlash {
     #   2. localId
     umount $1
     #mkfs.ext4 $argDevice -d root && echo OK || echo FAILED
+    myMkfs $argDevice root && echo OK || echo FAILED
     pushd /usr/share/flash-git/$2
     tmpAlias=$(cat alias)
-    mkfs.vfat -n "fg_$tmpAlias" $1 && tmp=$(mktemp -d) && mount $1 -tvfat -o"iocharset=utf8" $tmp && cp -rf * $tmp/ && umount $tmp && rm -rf $tmp && retval=0 || retval=1
+    myMkfs $1 /usr/share/flash-git/$2
     popd
     return $retval
 }
@@ -844,7 +865,7 @@ else
     if [[ -z "$argRepoList" ]]
     then
         prelmount=$(mktemp -d)
-        mount $argDevice -tvfat -o"iocharset=utf8" $prelmount
+        myMount $argDevice $prelmount
         if [[ ! -r $prelmount/alias ]]
         then
             echo "incorrect media..."
@@ -878,7 +899,7 @@ then
     fi
 else
     tmp=$(mktemp)
-    mount $argDevice -tvfat -o"iocharset=utf8" $tmp && if ! checkRepolistAvailable $tmp/repos
+    myMount $argDevice $tmp && if ! checkRepolistAvailable $tmp/repos
     then
         umount $tmp
         echo "this media trails at least one repository you already have"
@@ -964,7 +985,7 @@ else
     tempdir=$(mktemp -d)
     if [ "$argDevice" ]
     then
-        mount $argDevice -tvfat -o"iocharset=utf8" $tempdir
+        myMount $argDevice $tempdir
         cp -rf $tempdir/* $workdir/ # boris e
         #rm -rf $workdir/root
         #ln -s $tempdir/root $workdir/
