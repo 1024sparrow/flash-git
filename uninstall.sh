@@ -6,8 +6,17 @@ then
     exit 1
 fi
 
-rm /usr/local/bin/flash-git
-rm -rf /usr/share/flash-git
+tmp=/usr/local/bin/flash-git
+if [ -a $tmp ]
+then
+    rm $tmp
+fi
+
+tmp=/usr/share/flash-git
+if [ -d $tmp ]
+then
+    rm -rf $tmp
+fi
 
 tmp=/usr/share/bash-completion/completions/flash-git
 if [ -f $tmp ]
