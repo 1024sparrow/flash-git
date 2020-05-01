@@ -56,11 +56,11 @@ then
         pushd "$tmp"
 		echo "
 $tmp:" >> /usr/share/flash-git/log
-        git pull flash-git &> $tmpLog
+        su root -c "git pull flash-git" &> $tmpLog
 		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
-        git push flash-git &> $tmpLog
+        su root -c "git push flash-git" &> $tmpLog
 		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
-        git pull flash-git &> $tmpLog
+        su root -c "git pull flash-git" &> $tmpLog
 		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
         popd # "$tmp"
     done < $workdir/repos
