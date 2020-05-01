@@ -3,6 +3,8 @@
 
 # $USER is empty
 
+source /usr/share/flash-git__fs.sh
+
 function detectHardwareForMedia {
     # arguments:
     #   1. device
@@ -24,7 +26,7 @@ tmpMounted=$(mktemp -d)
 tmpHardware=$(mktemp)
 tmpLog=$(mktemp)
 detectHardwareForMedia $1 $tmpHardware
-mount $1 -tvfat -o"iocharset=utf8" $tmpMounted
+myMount $1 $tmpMounted
 #cp $tmpMounted/alias /home/boris/
 workdir=
 pushd /usr/share/flash-git
