@@ -22,6 +22,7 @@ fi
 
 tmpMounted=$(mktemp -d)
 tmpHardware=$(mktemp)
+tmpLog=$(mktemp)
 detectHardwareForMedia $1 $tmpHardware
 mount $1 -tvfat -o"iocharset=utf8" $tmpMounted
 #cp $tmpMounted/alias /home/boris/
@@ -52,9 +53,14 @@ then
     do
         tmp="$line"
         pushd "$tmp"
-        git pull flash-git
-        git push flash-git
-        git pull flash-git
+		echo "
+$tmp:" >> /usr/share/flash-git/log
+        git pull flash-git &> $tmpLog
+		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
+        git push flash-git &> $tmpLog
+		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
+        git pull flash-git &> $tmpLog
+		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
         popd # "$tmp"
     done < $workdir/repos
     rm $workdir/root
@@ -64,6 +70,7 @@ fi
 
 
 umount $tmpMounted
+rm tmpLog
 rm tmpHardware
 rm -rf tmpMounted
 exit 0
