@@ -419,11 +419,9 @@ function burnFlash {
     #   2. localId
     umount $1
     #mkfs.ext4 $argDevice -d root && echo OK || echo FAILED
-    myMkfs $argDevice root && echo OK || echo FAILED
-    pushd /usr/share/flash-git/$2
+    # myMkfs $argDevice root && echo OK || echo FAILED
     tmpAlias=$(cat alias)
-    myMkfs $1 /usr/share/flash-git/$2
-    popd
+    myMkfs $1 /usr/share/flash-git/$2 "fg_$tmpAlias"
     return $retval
 }
 
