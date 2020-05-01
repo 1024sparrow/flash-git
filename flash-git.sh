@@ -954,7 +954,6 @@ then
     if [ ! -z "$argDevice" ]
     then
         burnFlash $argDevice $localId
-        rm -rf $workdir/root
     else # argFakeDevice is not null
         rm -rf fakeDevices/"$argFakeDevice"/root
         mv $workdir/root fakeDevices/"$argFakeDevice"/
@@ -983,6 +982,7 @@ else
         fi
         ln -s $(pwd)/fakeDevices/"$argFakeDevice"/root $workdir/root
     fi
+
 	#if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
 	#then
 	#	echo "reinitializing? Rejected."
@@ -1026,7 +1026,6 @@ ${underline}${line}${nounderline}":
 	done < $workdir/repos
 	#echo $hostid >> root/hosts
 
-    rm -rf $workdir/root
     #umount $tempdir
     #rm -rf $tempdir
     #if [ ! -z $argDevice ]
