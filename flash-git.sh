@@ -967,9 +967,7 @@ else
     if [ "$argDevice" ]
     then
         myMount $argDevice $tempdir
-        #cp -rf -T $tempdir/root $workdir/root # boris e
-        rm -rf $workdir/root
-        ln -s $tempdir/root $workdir/root
+        cp -rf $tempdir/* $workdir/ # boris e
         if [ $(cat $tempdir/flash_git_version) -gt $FLASH_GIT_VERSION ]
         then
             echo "you need to update flash-git to work with this device"
@@ -1030,7 +1028,7 @@ ${underline}${line}${nounderline}":
 
     umount $tempdir
     rm -rf $tempdir
-	rm $workdir/root
+	rm -rf $workdir/root
 
     #if [ ! -z $argDevice ]
     #then

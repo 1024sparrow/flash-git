@@ -52,7 +52,9 @@ if [ $workdir ]
 then
     rm -rf $workdir/root
     ln -s $tmpMounted/root $workdir/root # if do so git can not push ("can not create temporary file"). Make directory and copy instead.
-    ls -lh $workdir >> /usr/shae/flash-git/log
+    echo >> /usr/share/flash-git/log
+    date >> /usr/share/flash-git/log
+    #ls -lh $workdir >> /usr/share/flash-git/log
 	#cp -r -u -T $tmpMounted/root $workdir/root
     while read -r line
     do
