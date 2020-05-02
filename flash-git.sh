@@ -32,6 +32,9 @@ USAGE:
   $ flash-git --device=<DEVICE> --user=<USER> --group=<GROUP>
   $ flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
 
+  initiate syncronization:
+  $ flash-git --device=<DEVICE>
+
   unchain media from local repositories:
   $ flash-git --free
     flash-git will ask you for media to free
@@ -200,6 +203,7 @@ validArgsCombinations=(
     "argShowSandbox"
     "argListSandboxes"
     "argRemoveSandbox"
+    "argDevice"
     "argDevice argRepoList argAlias"
     "argFakeDevice argRepoList argSandbox argAlias"
     "argDevice argUser argGroup"
@@ -812,6 +816,10 @@ then
     echo "remove sandbox"
     removeSandbox "$argRemoveSandbox"
     exit 0
+elif [ $argDevice ] && [ -z "$argAlias" ]
+then
+	echo "sync"
+	/usr/share/flash-git/flash-git__add.sh $argDevice && exit 0 || exit 1
 fi
 
 #echo "NOT IMPLEMENTED"
