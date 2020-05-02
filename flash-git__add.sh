@@ -50,7 +50,9 @@ popd # /usr/share/flash-git
 
 if [ $workdir ]
 then
+    rm -rf $workdir/root
     ln -s $tmpMounted/root $workdir/root # if do so git can not push ("can not create temporary file"). Make directory and copy instead.
+    ls -lh $workdir >> /usr/shae/flash-git/log
 	#cp -r -u -T $tmpMounted/root $workdir/root
     while read -r line
     do
@@ -66,6 +68,7 @@ $tmp:" >> /usr/share/flash-git/log
 		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
         popd # "$tmp"
     done < $workdir/repos
+    rm $workdir/root
 	#cp -r -u -T $workdir/root $tmpMounted/root
 else
     echo "log about error"
