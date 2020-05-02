@@ -3,7 +3,7 @@
 
 # $USER is empty
 
-source /usr/share/flash-git__fs.sh
+source /usr/share/flash-git/flash-git__fs.sh
 
 function detectHardwareForMedia {
     # arguments:
