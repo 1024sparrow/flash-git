@@ -960,22 +960,23 @@ then
         mv $workdir/root fakeDevices/"$argFakeDevice"/
         echo OK
     fi
+	rm -rf $workdir/root
 
 else
     tempdir=$(mktemp -d)
     if [ "$argDevice" ]
     then
         myMount $argDevice $tempdir
-        cp -rf $tempdir/* $workdir/ # boris e
-        #rm -rf $workdir/root
-        #ln -s $tempdir/root $workdir/
+        #cp -rf -T $tempdir/root $workdir/root # boris e
+        rm -rf $workdir/root
+        ln -s $tempdir/root $workdir/root
         if [ $(cat $tempdir/flash_git_version) -gt $FLASH_GIT_VERSION ]
         then
             echo "you need to update flash-git to work with this device"
             exit 1
         fi
-        umount $tempdir
-        rm -rf $tempdir
+        #umount $tempdir
+        #rm -rf $tempdir
     else # argFakeDevice is not null
         if [ ! -d fakeDevices/"$argFakeDevice"/root ]
         then
@@ -1027,8 +1028,10 @@ ${underline}${line}${nounderline}":
 	done < $workdir/repos
 	#echo $hostid >> root/hosts
 
-    #umount $tempdir
-    #rm -rf $tempdir
+    umount $tempdir
+    rm -rf $tempdir
+	rm $workdir/root
+
     #if [ ! -z $argDevice ]
     #then
     #    umount $workdir/root
