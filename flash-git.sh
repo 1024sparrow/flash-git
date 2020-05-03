@@ -941,7 +941,7 @@ then
 		do
 			git push --set-upstream flash-git "$branch"
 		done
-		git push flash-git
+		git remote remove flash-git
 		popd # "$tmp"
 	done < "$argRepoList"
 	cp -L "$argRepoList" $workdir/repos # dereferencing if it's a symbolyc link
@@ -1014,10 +1014,10 @@ ${underline}${line}${nounderline}":
             tmp=sandboxes/"$argSandbox"/"$line"
         fi
         su ${argUser} -c "mkdir -p \"$tmp\""
-		repopath=$workdir/root/"$(basename $line).git"
+		repopath=$workdir/root/"$(basename $tmp).git"
 		git clone "$repopath" "$tmp"
 		pushd "$tmp"
-		git remote rename origin flash-git
+		git remote remove origin
 		popd
 		chown -R $argUser "$tmp"
 		chgrp -R $argGroup "$tmp"
