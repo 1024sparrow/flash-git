@@ -51,20 +51,12 @@ then
         pushd "$tmp"
 		echo "
 $tmp:" >> /usr/share/flash-git/log
-
-		repopath=$workdir/root/"$(basename $tmp).git"
-		git remote remove flash-git
-		git remote add flash-git "$repopath" # boris here
-
         git pull flash-git &> $tmpLog
 		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
         git push flash-git &> $tmpLog
 		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
         git pull flash-git &> $tmpLog
 		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
-
-		git remote remove flash-git
-
         popd # "$tmp"
     done < $workdir/repos
     rm $workdir/root
