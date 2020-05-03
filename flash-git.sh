@@ -17,7 +17,25 @@ do
 	if [[ "$i" == "--help" || $i == "-h" ]]
 	then
 		echo "
-Утилита для настройки автоматической синхронизации локальных git-репозиториев (на разных компьютерах) через флешку.
+Synchronizer for local repositories (on some machines) through a flash-drive.
+All options but "--help" require to be runned under root.
+
+options:
+
+--help
+    show this help
+
+--device=<xx>
+    set flash-device xx. Sync device with local repositories if addon options is not set.
+
+--user=<user>
+    set user to set new local repository ownership
+
+--group=<group>
+    set group to set new local repository ownership
+
+--show-registered
+    list auto-processing devices (not fake but real)
 
 USAGE:
 
@@ -26,136 +44,26 @@ USAGE:
   no matter if in addon to "--help" would be any other arguments - they will be ignored
 
   initialize media by local repositories:
-  $ flash-git --device=<DEVICE> --alias=<ALIAS> --repo-list=<REPO_LIST>
-  $ flash-git --fake-device=<FAKE_DEVICE> --repo-list=<REPO_LIST> --alias=<ALIAS> --sandbox=<SANDBOX>
+  # flash-git --device=<DEVICE> --alias=<ALIAS> --repo-list=<REPO_LIST>
 
   initialize local repositories by media:
-  $ flash-git --device=<DEVICE> --user=<USER> --group=<GROUP>
-  $ flash-git --fake-device=<FAKE_DEVICE> --user=<USER> --group=<GROUP> --sandbox=<SANDBOX>
+  # flash-git --device=<DEVICE> --user=<USER> --group=<GROUP>
 
   initiate syncronization:
-  $ flash-git --device=<DEVICE>
+  # flash-git --device=<DEVICE>
 
   unchain media from local repositories:
-  $ flash-git --free
+  # flash-git --free
     flash-git will ask you for media to free
 
   restore media via local repositories
-  $ flash-git --restore=<DEVICE>
-  previously flash-drive will be discarded
-  $ flash-git --restore=<FAKE_DEVICE> # boris e
-  # boris here e: udev-replaceable (for Windows and MacOS compatibility)
+  # flash-git --restore=<DEVICE>
+    previously flash-drive will be discarded
 
   show using devices and repositories:
-  $ flash-git --show-registered
+  # flash-git --show-registered
 
-  create fake device:
-  $ flash-git --create-fake-device=<FAKE_DEVICE>
-  $ flash-git --show-fake-device=<FAKE_DEVICE>
-  $ flash-git --create-sandbox=<SANDBOX> --user=<USER>
-  $ flash-git --show-sandbox=<SANDBOX>
-  $ flash-git --list-fake-devices
-  $ flash-git --list-sandboxes
-  $ flash-git --remove-fake-device=<FAKE_DEVICE>
-  $ flash-git --remove-sandbox=<SANDBOX>
-
-
-
-${underline}Инициализация флешки по локальным репозиториям:${nounderline}
-
-* У локальных репозиториев прописывается флешка как дополнительный удалённый репозиторий, куда/откуда могут делаться делается push/pull (если эти репозитории были откуда-то стянуты, их origin остаётся на месте - все pull-push будут успешно проходить по-умолчанию туда, куда раньше проходили)
-* В системе прописывается udev-правило на подключение КОНКРЕТНО ЭТОЙ флешки, что при её физическом подключении происходит
-   * её автоматическое монтирование;
-   * для всех указанных при инициализации репозиториев выполняется git pull;git push на флешку (см. более подробное описание этой процедуры ниже);
-   * размонтирование флешки.
-* На флешку записываются
-   * список путей до локальных репозиториев, подлежащих синхронизации через эту флешку
-   * Расшаренные клоны локальных репозиториев, на которые теперь можно делать pull/push
-   * Уникальный идентификатор хоста - это для идентификации системой попытки повторно проинициализировать флешку
-
-Порядок инициализации:
-* составьте файл со списком путей до локальных репозиториев. Обозначим путь до этого файла как <путь_A>
-* вставьте флешку (не монтируйте), определите файл её устройства (что-то вроде /dev/sdb)
-* запустите от имени суперпользователя данный скрипт со следующими аргументами:
-
-\$sudo ./flash-git.git --device=<ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --repo-list=<путь_А>
-
-${underline}Инициализация локальных репозиториев по флешке:${nounderline}
-
-* По списку путей, записанных на флешку при инициализации флешки, клонируются с флешки репозитории (если по какому-то из этих путей директория уже есть на вашем компьютере, программа инициализации завершится, оповестив вас о невозможности инициализации репозиториев на вашем компьютере)
-* В системе прописывается udev-правило на подключение КОНКРЕТНО ЭТОЙ флешки, что при её физическом подключении происходит
-   * её автоматическое монтирование;
-   * для всех указанных при инициализации репозиториев выполняется git pull;git push на флешку (см. более подробное описание этой процедуры ниже);
-   * размонтирование флешки.
-* На флешку записывается уникальный идентификатор хоста - это для идентификации системой попытки повторно проинициализировать репозитории по флешке
-
-При клонировании репозиториев с флешки, при создании директорий для клонирования
-все пути /home/*/... заменяются на /home/<ИМЯ_ПОЛЬЗОВАТЕЛЯ>/...
-
-Порядок инициализации:
-* вставьте флешку (не монтируйте), определите файл её устройства (что-то вроде /dev/sdb)
-* запустите от имени суперпользователя данный скрипт со следующими аргументами:
-
-\$sudo ./flash-git.git --device=<ПУТЬ_ДО_УСТРОЙСТВА_ФЛЕШКИ> --user=\$USER --group=\$USER
-
-${underline}Дополнительные аргументы для отладки${nounderline}
-
-Для тестирования и отладки данного скрипта поддерживается возможность работы не с реальной файловой системой и реальными флешками, а с песочницами и снимками флешек.
-Песочница - это директория, в которой находится файл "hostid" с фейковым идентификатором хоста.
-Снимок флешки - это директория, в которой находится файл с информацией о флешке (производитель, серийный номер и всё такое)
-
-Данным скриптом поддерживаются следующие аргументы для отладки и тестирования:
-
---help
-    show this help
-
---device=<xx>
-    set flash-device xx
-
---fake-device=<xx>
-    set fake-device xx
-
---user=<user>
-    set user to set new local repository ownership
-
---group=<group>
-    set group to set new local repository ownership
-
---sandbox=<ПЕСОЧНИЦА>
-	В указанной выше директории должен находиться файл ${bold}hostid${normal} с фейковым идентификатором хоста
-
---show-registered
-    list auto-processing devices (not fake but real)
-
---fake-insert=<СНИМОК_ФЛЕШКИ>
-	Проиграть имитацию того, что была вставлена флешка
-
---fake-release=<СНИМОК_ФЛЕШКИ>
-	Проиграть имитацию того, что флешка была извлечена (аппаратно)
-
---create-fake-device=<FAKE_DEVICE>
-    create and initialize directory that can be in future pointed as fake device
-
---show-fake-device=<FAKE_DEVICE>
-    show info about pointed fake device
-
---create-sandbox=<SANDBOX>
-    create and initialize directory that can be in future pointed as a sandbox
-
---show-sandbox=<SANDBOX>
-    show info about pointed sandbox
-
---list-fake-devices
-    list all fake-devices names
-
---list-sandboxes
-    list all sandboxes names
-
---remove-fake-device=<FAKE_DEVICE>
-    remove fake device
-
---remove-sandbox=<SANDBOX>
-    remove sandbox
+Copyright © 2020 Boris Vasilyev. License MIT: <https://github.com/1024sparrow/flash-git/blob/master/LICENSE>
 "
 		exit 0
 	fi
@@ -1027,96 +935,7 @@ ${underline}${line}${nounderline}":
     umount $tempdir
     rm -rf $tempdir
 	rm -rf $workdir/root
-
-    #if [ ! -z $argDevice ]
-    #then
-    #    umount $workdir/root
-    #    rm -rf $workdir/root
-    #else
-    #    rm root
-    #fi
 fi
-
-#=====================
-#exit 0
-
-mediaPath=$(pwd)
-
-#echo "#!/bin/bash
-## flash-git version: $FLASH_GIT_VERSION
-#
-#if [ ! \$(id -u) -eq 0 ]
-#then
-#    echo Run this under ROOT only!
-#    exit 1
-#fi
-#
-#
-##r=\$(mktemp -d)
-##pushd \$r
-#
-#if [ ! -d \"$mediaPath\" ]
-#then
-#    echo flash-git config lost
-#    exit 1
-#fi
-#
-#pushd \"$mediaPath\"
-#rm -rf root
-#if [ -z \"$argDevice\" ]
-#then
-#    #ln -s fakeDevices/"$argFakeDevice" root
-#    if [[ ! -r fakeDevices/\"\$1\"/hardware ]]
-#    then
-#        echo Please specify a fake device to set as your repository carrier
-#        exit 1
-#    fi
-#    ln -s fakeDevices/\"\$1\"/root root
-#else
-#    if [[ ! -b \"\$1\" ]]
-#    then
-#        echo Please specify a device to set as your repository carrier
-#        exit 1
-#    fi
-#    mkdir root
-#    mount \"\$1\" root
-#fi
-#if [ ! -r root/repos ]
-#then
-#    echo \"\\\"repos\\\" not found\"
-#    exit 1
-#fi
-#for oRepo in \$(cat root/repos) # boris e: read per-entire-line instead of split by space-symbols
-#do
-#	echo \"repo:  \$oRepo\"
-#    tmp=\"\$oRepo\"
-#    if [ ! -z \"$argSandbox\" ]
-#    then
-#        tmp=\"$(pwd)/sandboxes/\"\$2\"/\$oRepo\"
-#    fi
-#    pushd \"\$tmp\"
-#	git pull flash-git
-#	git push flash-git
-#	git pull flash-git
-#	popd
-#done
-#if [ -z \""$argDevice\"" ]
-#then
-#    rm root
-#else
-#    umount root
-#    rm -rf root
-#fi
-#popd # $mediaPath
-#
-#" > flash-git__add.sh
-
-#echo "#!/bin/bash
-## flash-git version: $FLASH_GIT_VERSION
-#" > flash-git__remove.sh
-
-#chmod +x flash-git__{add,remove}.sh
-#chmod +x /usr/local/bin/flash-git__{add,remove}.sh
 
 if [ ! -f $udevRulesPath ]
 then
