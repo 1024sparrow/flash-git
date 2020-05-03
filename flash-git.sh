@@ -2,13 +2,8 @@
 
 declare -i FLASH_GIT_VERSION=0
 
-source /usr/share/flash-git/flash-git__fs.sh
-source /usr/share/flash-git/flash-git__hw.sh
-
-#underline=`tput smul`
-#nounderline=`tput rmul`
-#bold=`tput bold`
-#normal=`tput sgr0`
+source /usr/share/flash-git/flash-git__fs.sh # myMkfs, myMount
+source /usr/share/flash-git/flash-git__hw.sh # detectHardwareForMedia
 
 udevRulesPath=/etc/udev/rules.d/10-flash-git.rules
 
@@ -79,67 +74,21 @@ allArgs=(
     argFree
     argRestore
     argShowRegistered
-    argSandbox
-    argFakeinsert
-    argFakeRelease
     argUser
     argGroup
     argRepoList
     argDevice
-    argFakeDevice
     argAlias
-    argCreateFakeDevice
-    argShowFakeDevice
-    argCreateSandbox
-    argShowSandbox
-    argListFakeDevices
-    argListSandboxes
-    argRemoveFakeDevice
-    argRemoveSandbox
 )
 
 validArgsCombinations=(
     "argFree"
     "argRestore argAlias"
     "argShowRegistered"
-    "argFakeinsert argSandbox"
-    "argFakeRelease argSandbox"
-    "argCreateFakeDevice"
-    "argShowFakeDevice"
-    "argListFakeDevices"
-    "argRemoveFakeDevice"
-    "argCreateSandbox argUser"
-    "argShowSandbox"
-    "argListSandboxes"
-    "argRemoveSandbox"
     "argDevice"
     "argDevice argRepoList argAlias"
-    "argFakeDevice argRepoList argSandbox argAlias"
     "argDevice argUser argGroup"
-    "argFakeDevice argUser argGroup argSandbox"
 )
-
-function checkArgSandbox {
-    if [ ! -d sandboxes/"$1" ]
-    then
-        echo "Not such directory: $1"
-        exit 1
-    fi
-    if [ ! -r sandboxes/"$1"/hostid ]
-    then
-        echo "Directory \"$1\" does not present a sandbox"
-        exit 1
-    fi
-}
-
-function checkFakeMedia {
-    echo checkArgFakeInsert
-    if [ ! -r fakeDevices/"$1"/hardware ]
-    then
-        echo "\"$1\" is not a fake media"
-        exit 1
-    fi
-}
 
 function checkArgUser {
     if [ "$(grep -c "^$1:" /etc/passwd)" -eq 0 ]
@@ -320,8 +269,6 @@ function burnFlash {
     #   1. device
     #   2. localId
     umount $1
-    #mkfs.ext4 $argDevice -d root && echo OK || echo FAILED
-    # myMkfs $argDevice root && echo OK || echo FAILED
     tmpAlias=$(cat alias)
     myMkfs $1 /usr/share/flash-git/$2 "fg_$tmpAlias"
     return $retval
@@ -379,117 +326,6 @@ function showRegistered {
     fi
 }
 
-function insertFakeDevice {
-    ./flash-git__add.sh "$1" "$2"
-    exit 0
-}
-
-function releaseFakeDevice {
-    ./flash-git_remove.sh "$1"
-    exit 0
-}
-
-function createFakeMedia {
-    if [ -d fakeDevices/"$1" ]
-    then
-        echo "such directory already exists"
-        exit 1
-    fi
-    mkdir -p fakeDevices/"$1"
-	for i in idVendor idProduct serial product manufacturer
-    do
-        echo -n "$i: "
-        read tmp
-        echo "ID_$i=$tmp" >> fakeDevices/"$1"/hardware
-    done
-}
-
-function showFakeMedia {
-    if [ ! -r fakeDevices/"$1"/hardware ]
-    then
-        echo "such fake device not found"
-        exit 1
-    fi
-    source fakeDevices/"$1"/hardware
-    tmp=$(cat fakeDevices/"$1"/alias)
-    echo "Alias: \"$tmp\""
-    for i in idVendor idProduct serial product manufacturer
-    do
-        tmp=ID_$i
-        echo "ID_$i=${!tmp}"
-    done
-}
-
-function createSandbox {
-    if [ -d sandboxes/"$1" ]
-    then
-        echo "such directory already exists"
-        exit 1
-    fi
-    su $2 -c "mkdir -p sandboxes/\"$1\""
-    echo -n "host id: "
-    read tmp
-    su $2 -c "echo $tmp > sandboxes/\"$1\"/hostid"
-}
-
-function showSandbox {
-    if [ ! -r sandboxes/"$1"/hostid ]
-    then
-        echo "such sandbox not found"
-        exit 1
-    fi
-    tmp=$(cat sandboxes/"$1"/hostid)
-    echo "host id: $tmp"
-}
-
-function listFakeDevices {
-    if [ -d fakeDevices ]
-    then
-        pushd fakeDevices
-        for i in $(ls -1)
-        do
-            if [ -r "$i"/hardware ]
-            then
-                echo "$i"
-            fi
-        done
-        popd
-    fi
-}
-
-function listSandboxes {
-    if [ -d sandboxes ]
-    then
-        pushd sandboxes
-        for i in $(ls -1)
-        do
-            if [ -r "$i"/hostid ]
-            then
-                echo "$i"
-            fi
-        done
-        popd
-    fi
-}
-
-function removeFakeDevice {
-    if [ ! -r fakeDevices/"$1"/hardware ]
-    then
-        echo "such fake device not found"
-        exit 1
-    fi
-    rm -rf fakeDevices/"$1"
-}
-
-function removeSandbox {
-    if [ ! -r sandboxes/"$1"/hostid ]
-    then
-        echo "such fake device not found"
-        exit 1
-    fi
-    rm -rf sandboxes/"$1"
-}
-
 for i in $*
 do
     #echo $i
@@ -500,21 +336,9 @@ do
     then
         argRestore="${i:10}"
         checkMediaDevice "$argRestore"
-    elif [[ ${i:0:10} == "--sandbox=" ]]
-    then
-        argSandbox="${i:10}"
-        checkArgSandbox "$argSandbox"
     elif [[ $i == "--show-registered" ]]
     then
         argShowRegistered=true
-    elif [[ ${i:0:14} == "--fake-insert=" ]]
-    then
-        argFakeinsert="${i:14}"
-        checkFakeMedia "$argFakeinsert"
-    elif [[ ${i:0:15} == "--fake-release=" ]]
-    then
-        argFakeRelease="${i:15}"
-        checkFakeMedia "$argFakeRelease"
     elif [[ ${i:0:7} == "--user=" ]]
     then
         argUser="${i:7}"
@@ -536,37 +360,9 @@ do
     then
         argDevice="${i:9}"
         checkMediaDevice "$argDevice"
-    elif [[ ${i:0:14} == "--fake-device=" ]]
-    then
-        argFakeDevice="${i:14}"
-        checkFakeMedia "$argFakeDevice"
     elif [[ ${i:0:8} == "--alias=" ]]
     then
         argAlias=${i:8}
-    elif [[ ${i:0:21} == "--create-fake-device=" ]]
-    then
-        argCreateFakeDevice="${i:21}"
-    elif [[ ${i:0:19} == "--show-fake-device=" ]]
-    then
-        argShowFakeDevice="${i:19}"
-    elif [[ ${i:0:17} == "--create-sandbox=" ]]
-    then
-        argCreateSandbox="${i:17}"
-    elif [[ ${i:0:15} == "--show-sandbox=" ]]
-    then
-        argShowSandbox="${i:15}"
-    elif [[ ${i} == "--list-fake-devices" ]]
-    then
-        argListFakeDevices=true
-    elif [[ ${i} == "--list-sandboxes" ]]
-    then
-        argListSandboxes=true
-    elif [[ ${i:0:21} == "--remove-fake-device=" ]]
-    then
-        argRemoveFakeDevice="${i:21}"
-    elif [[ ${i:0:17} == "--remove-sandbox=" ]]
-    then
-        argRemoveSandbox="${i:17}"
     else
         echo "unexpected argument: $i
 See \"--help\" for details."
@@ -651,69 +447,13 @@ then
     echo "show registered"
     showRegistered
     exit 0
-elif [ $argFakeinsert ]
-then
-    echo "fake media insert"
-    insertFakeDevice "$argFakeinsert" "$argSandbox"
-    exit 0
-elif [ $argFakeRelease ]
-then
-    echo "fake media release"
-    releaseFakeDevice "$argFakeRelease"
-    exit 0
 elif [ $argDevice ] && [ $argRepoList ]
 then
     echo "initialize local repositories by media"
     checkArgRepoList "$argRepoList"
-elif [ $argFakeDevice ] && [ $argRepoList ] && [ $argSandbox ]
-then
-    echo "initialize local repositories by media (fake mode)"
 elif [ $argDevice ] && [ $argUser ] && [ $argGroup ]
 then
     echo "initialize media by local repositories"
-elif [ $argFakeDevice ] && [ $argUser ] && [ $argGroup ] && [ $argSandbox ]
-then
-    echo "initialize fake media by local repositories"
-elif [ $argCreateFakeDevice ]
-then
-    echo "create fake device"
-    createFakeMedia "$argCreateFakeDevice"
-    exit 0
-elif [ $argShowFakeDevice ]
-then
-    echo "show fake device"
-    showFakeMedia $argShowFakeDevice
-    exit 0
-elif [ $argCreateSandbox ]
-then
-    echo "create sandbox"
-    createSandbox "$argCreateSandbox" $argUser
-    exit 0
-elif [ $argShowSandbox ]
-then
-    echo "show sandbox"
-    showSandbox "$argShowSandbox"
-    exit 0
-elif [ $argListFakeDevices ]
-then
-    echo "list fake devices"
-    listFakeDevices
-    exit 0
-elif [ $argListSandboxes ]
-then
-    echo "list sandboxes"
-    listSandboxes
-    exit 0
-elif [ $argRemoveFakeDevice ]
-then
-    echo "remove fake device"
-    removeFakeDevice "$argRemoveFakeDevice"
-    exit 0
-elif [ $argRemoveSandbox ]
-then
-    echo "remove sandbox"
-    removeSandbox "$argRemoveSandbox"
-    exit 0
 elif [ $argDevice ] && [ -z "$argAlias" ]
 then
 	echo "sync"
@@ -822,7 +562,6 @@ then
 	#source $hardwareFile
 	#echo $ID_SERIAL
 
-    #su $2 -c "mkdir -p sandboxes/\"$1\""
 	rm -rf $workdir/root
 	mkdir $workdir/root
     echo -n > $workdir/repos
@@ -835,10 +574,6 @@ then
         #    t=${#HOME}
         #    tmp=~/${tmp:$t}
         #fi
-        if [ "$argSandbox" ]
-        then
-            tmp=sandboxes/"$argSandbox"/"$line"
-        fi
 		repopath=$workdir/root/$(basename $tmp).git # boris e: add check for repositories names are all unique
         mkdir $repopath
 		git init --bare --shared=true "$repopath"
@@ -858,36 +593,20 @@ then
     #copy_flashgit_into_dir root
     echo $FLASH_GIT_VERSION > $workdir/flash_git_version
 
-    if [ ! -z "$argDevice" ]
-    then
-        burnFlash $argDevice $localId
-    else # argFakeDevice is not null
-        rm -rf fakeDevices/"$argFakeDevice"/root
-        mv $workdir/root fakeDevices/"$argFakeDevice"/
-        echo OK
-    fi
+	burnFlash $argDevice $localId
 	rm -rf $workdir/root
 
 else
     tempdir=$(mktemp -d)
-    if [ "$argDevice" ]
-    then
-        myMount $argDevice $tempdir
-        cp -rf $tempdir/* $workdir/ # boris e
-        if [ $(cat $tempdir/flash_git_version) -gt $FLASH_GIT_VERSION ]
-        then
-            echo "you need to update flash-git to work with this device"
-            exit 1
-        fi
-        #umount $tempdir
-        #rm -rf $tempdir
-    else # argFakeDevice is not null
-        if [ ! -d fakeDevices/"$argFakeDevice"/root ]
-        then
-            mkdir -p fakeDevices/"$argFakeDevice"/root
-        fi
-        ln -s $(pwd)/fakeDevices/"$argFakeDevice"/root $workdir/root
-    fi
+	myMount $argDevice $tempdir
+	cp -rf $tempdir/* $workdir/ # boris e
+	if [ $(cat $tempdir/flash_git_version) -gt $FLASH_GIT_VERSION ]
+	then
+		echo "you need to update flash-git to work with this device"
+		exit 1
+	fi
+	umount $tempdir
+	rm -rf $tempdir
 
 	#if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
 	#then
@@ -897,13 +616,7 @@ else
 
 	while read -r line
 	do
-		echo "
-${underline}${line}${nounderline}":
         tmp="$line"
-        if [ ! -z "$argSandbox" ]
-        then
-            tmp=sandboxes/"$argSandbox"/"$line"
-        fi
 		if [ -d "$tmp" ]
 		then
             rm -rf $workdir
@@ -915,12 +628,8 @@ ${underline}${line}${nounderline}":
 	while read -r line
 	do
 		echo "
-${underline}${line}${nounderline}":
+${line}":
         tmp="$line"
-        if [ ! -z "$argSandbox" ]
-        then
-            tmp=sandboxes/"$argSandbox"/"$line"
-        fi
         su ${argUser} -c "mkdir -p \"$tmp\""
 		repopath=$workdir/root/"$(basename $line).git"
 		git clone "$repopath" "$tmp"
@@ -932,8 +641,6 @@ ${underline}${line}${nounderline}":
 	done < $workdir/repos
 	#echo $hostid >> root/hosts
 
-    umount $tempdir
-    rm -rf $tempdir
 	rm -rf $workdir/root
 fi
 
