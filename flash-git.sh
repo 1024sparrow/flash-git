@@ -3,6 +3,7 @@
 declare -i FLASH_GIT_VERSION=0
 
 source /usr/share/flash-git/flash-git__fs.sh
+source /usr/share/flash-git/flash-git__hw.sh
 
 #underline=`tput smul`
 #nounderline=`tput rmul`
@@ -279,17 +280,6 @@ function checkMediaDevice {
         echo "\"$1\" is not valid media device"
         exit 1
     fi
-}
-
-function detectHardwareForMedia {
-    # arguments:
-    #   1. device
-    #   2. file path to write hardware info
-    for i in idVendor idProduct serial product manufacturer
-    do
-        var=$(udevadm info -a -n $1 | grep -m1 "ATTRS{$i}" | sed "s/^.*==\"//" | sed "s/\"$//")
-        echo "ID_$i=\"$var\"" >> $2
-    done
 }
 
 function normalizeUdevRules {
