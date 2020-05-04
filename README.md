@@ -1,83 +1,61 @@
 # flash-git
-> Утилита для синхронизации через флешку локальных git-репозиториев на компьютерах, не связанных сетью
+> Utility for synchronizing via a USB flash drive local git repositories on computers not connected by a network
 
-Данный инструмент предназначен для
-- обеспечения хранения репозитория на флешке;
-- синхронизации репозиториев на разных компьютерах через флэшку путём простой вставки-и-вынимания флэшки;
-- восстановления флэшки-носителя с локальной реплики репозитория на любом из компьютеров.
+There is README [in Russian](README-ru.md)
 
-Это может быть применимо для следующих целей:
-- Совместная работа людей на компьютерах, не соединённых сетью.
-- Дублирование данных на разных компьютерах. Альтернатива использованию RAID-массивов.
-- Оперативное обновление ПО у заказчика без выхода в сеть.
+This tool is intended for
+- ensuring storage of the repository on a flash drive;
+- synchronization of repositories on different computers via a flash drive by simply inserting and removing a flash drive;
+- recovery of the flash drive from the local replica of the repository on any of the computers.
 
-## Требования и текущие проблемы
+This may be applicable for the following purposes:
+- Collaboration of people on computers that are not connected by a network.
+- Duplication of data on different computers. An alternative to using RAID arrays.
+- Rapid software updates at the customer's site without going online.
 
-Текущая версия - 0.
+## Requirements and Current Issues
 
-На данный момент утилита работает только в Linux.
+The current version is 0.
 
-Кроме того, у данной утилиты (версия 0) имеется ряд ограничений (всвязи с багами и недоделками):
-* Работать можно только в Linux. Причём созданные сейчас флешки не будут работать с будущими версиями flash-git (при обновлении потребуется переинициализация всех используемых флешек; сейчас используется файловая система ext4, которая не может использоваться в Windows, планируется переход на FAT-32 для возможности синхронизации репозиториев на компьютерах с разными операционными системами и с разной поддержкой файловых систем).
-* У задействованных локальных репозиториев может быть сколько угодно "git remote", но после регистрации локального репозитория в flash-git с git в тех локальных репозиториях "git pull" и "git push" можно делать только под рутом. При обновлении flash-git права на служебные файлы git будут восстановлены.
-* В списке путей к локальным директориям, если ваш локальный репозиторий находится где-то в недрах домашней директории, вместо "/home/$USER/" следует писать "~/". Автозамена таких вещей сейчас не работает, а у пользователя с другим именем при синхронизации возникнут проблемы с правами чтения-записи, так как у него домашняя директория находится по другому пути.
-* Для синхронизации с флешкой после вставки надо также запустить "flash-git --device=<ФАЙЛ-УСТРОЙСТВА-ФЛЕШКИ>". Сделать синхронизацию автоматической посредством только лишь "udev rules" (Linux-specific) при вставке флешки не получилось (проблемы возникают при вызове "git push"), а через мониторящего демона пока не реализовано.
-* Через одну флешку нельзя синхронизировать более 100 репозиториев.
-* В синхронизируемых репозиториях нельзя создавать, удалять или переименовывать ветку "flash-git".
+At the moment, the utility works only on Linux.
 
-Процесс синхронизации репозиториев логируется в файл /usr/share/flash-git/log
+In addition, this utility (version 0) has a number of limitations (due to bugs and deficiencies):
+* You can work only on Linux. Moreover, the flash drives created now will not work with future versions of flash-git (during the upgrade, it will require reinitialization of all the used flash drives; now the ext4 file system is used, which cannot be used in Windows, it is planned to switch to FAT-32 for synchronization of repositories on computers with different operating systems systems and with different file system support).
+* The involved local repositories can have any number of "git remote", but after registering the local repository in flash-git with git in those local repositories, "git pull" and "git push" can only be done under root. When flash-git is updated, the rights to the git service files will be restored.
+* In the list of paths to local directories, if your local repository is somewhere in the bowels of the home directory, instead of "/ home / $ USER /", write "~ /". Auto-replacement of such things does not work now, and a user with a different name will have problems with read-write permissions during synchronization, since his home directory is in a different path.
+* To synchronize with a USB flash drive after insertion, you must also run "flash-git --device = <FILE-DEVICE-USB Flash Drive>". It was not possible to make synchronization automatic by using only "udev rules" (Linux-specific) when inserting a flash drive (problems arise when calling "git push"), but has not yet been implemented through a monitoring daemon.
+* You cannot sync more than 100 repositories through one USB flash drive.
+* In synchronized repositories, you cannot create, delete or rename the flash-git branch.
 
-## Установка
+The repository synchronization process is logged to the file /usr/share/flash-git/log
 
-> выберите место для выкачивания данного репозитория таким образом, чтобы этот репозиторий не был впоследствии удалён, переименован или перемещён - после установки системные файлы flash-git будут ссылаться на файлы из выкачанного вами репозитория
+## Installation
 
-После того, как выкачали данный репозиторий, запустите из-под root-а скрипт install.sh
+> select a location to download this repository so that this repository is not subsequently deleted, renamed or moved - after installation, flash-git system files will refer to files from the repository you downloaded
 
-Впоследствии, при желании обновить версию flash-git-а вам останется только сделать "git pull". Если же в релизе новой версии будет оговорено, что нет совместимости с предыдущими версиями, следует выполнить "./uninstall.sh" перед обновлением, и "./install.sh" после обновления, при этом все предыдущие регистрации флешек будут сброшены.
+After downloading this repository, run the install.sh script from under the root
 
-# Создание флешки-носителя (инициализация флешки)
+Subsequently, if you want to update the version of flash-git, you just have to do a "git pull". If the release of the new version stipulates that there is no compatibility with previous versions, you should perform "./uninstall.sh" before upgrading, and "./install.sh" after upgrading, and all previous registrations of flash drives will be reset.
 
-Для того, чтобы зарегистрировать флешку как переносчик ваших локальных репозиториев, создайте текстовый файл (например, *my-repositories*) и впишите туда пути к тем репозиториям, которые хотите хранить на флешке.
-```
+# Creating a flash drive (initializing a flash drive)
+
+To register a USB flash drive as a carrier of your local repositories, create a text file (for example, *my-repositories*) and write the paths to those repositories that you want to store on the USB flash drive.
+```bash
 /home/user/some_dir/00309_test_git_1
 /home/user/some_dir/00309_test_git_2
 ```
-Это должны быть проинициализированные git-репозитории. Наличие у них *origin* не имеет значения.
+These must be initialized git repositories. Their presence *origin* does not matter.
 
-Вставьте флешку. Не монтируйте её. Посмотрите, в какой файл устройства отобразилась ваша флэшка (в данном случае, "sdb"):
-От имени root-а запустите flash-git со следующими аргументами:
-> При первой инициализации флешка будет отформатирована. Все данные на ней будут уничтожены!
+Insert a flash drive. Do not mount it. Look at which device file your flash drive is displayed in (in this case, "sdb"):
+As root, run flash-git with the following arguments:
+> The first time the flash drive is initialized, it will be formatted. All data on it will be destroyed!
 ```bash
-$ sudo flash-git --device=/dev/sdb --alias=myFlash_00309 --repo-list=my-repositories
+$ sudo flash-git --device = / dev / sdb --alias = myFlash_00309 --repo-list = my-repositories
 ```
-Опция --alias обязательна. Это идентификатор флешки, дополнительный к её серийному номеру. Позволяет при отображении списка зарегистрированных флешек видеть более человекочитаемый идентификатор, чем серийный номер. Рекомендуется в *alias* включать также дату инициализации флешки: это будет полезно, когда будете переинициализировать флешки (для того, чтобы вынести один локальный репозиторий на другую флешку, нужно кроме того как новую зарегистрировать, ещё и старую переинициализировать - вот тут то и полезно будет видеть дату текущей инициализации флешки)
+The --alias option is required. This is the identifier of the flash drive, additional to its serial number. Allows you to see a more readable identifier than the serial number when displaying a list of registered flash drives. It is recommended to include the flash drive initialization date in *alias*: this will be useful when you reinitialize the flash drives (in order to transfer one local repository to another flash drive, you need to register the old one and reinitialize the old one - this is where it will be useful see the date of the current flash drive initialization)
 
-Во время первой инициализации на флешке сохраняется список путей до репозиториев, указанных в my-repositories, а также сами локальные репозитории клонируются на флешку (не в том виде, чтоб с ними можно было напрямую прям на флешке работать).
+During the first initialization, the list of paths to the repositories specified in my-repositories is saved on the USB flash drive, as well as the local repositories themselves are cloned to the USB flash drive (not in such a way that you can work directly with them on the USB flash drive).
 
-## Инициализация флешки по локальным репозиториям:
+## Initializing a flash drive for local repositories:
 
-При инициализации локальных репозиториев производится проверка на наличие в файловой системе таких директорий. Если хоть одна директория из списка синхронизируемых репозиториев уже существует, flash-git выведет сообщение о проблеме и ничего делать не будет.
-
-Для инициализации локальных репозиториев по флешке необходимо запустить flash-git со следующими аргументами:
-```bash
-$ sudo flash-git --device=/dev/sdb --user=$USER --group=$USER
-```
-Локальные репозитории будут клонированы с флешки по путям, записанным на флешку при её инициализации.
-С этими репозиториями уже можно работать.
-
-## Синхронизация локальных репозиториев и флешки
-
-Для синхронизации локальных репозиториев и флешки запустите flash-git с единственным аргументом:
-```bash
-$ sudo flash-git --device=/dev/sdb
-```
-
-## Справка и поддержка
-
-Утилита позволяет привязать флешку, отвязать флешку, вывести список зарегистрированных флешек, а также восстановить утраченную флешку(инициализировать флешку по данным регистрации другой флешки, после чего старая флешка работать не будет, но будет работать новая).
-Для того, чтобы посмотреть все опции flash-git, запустите flash-git с аргументом "--help":
-```bash
-$ flash-git --help
-```
-
-Copyright © 2020 Boris Vasilev. License MIT: <https://github.com/1024sparrow/flash-git/blob/master/LICENSE>
+When initializing local repositories, it checks for the presence of such directories in the file system
