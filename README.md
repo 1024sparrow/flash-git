@@ -82,6 +82,6 @@ To see all flash-git options, run flash-git with the argument "--help":
 $ flash-git --help
 ```
 
-If there are any problems, please write [HERE] (https://github.com/1024sparrow/flash-git/issues/new) or to me personally by mail (1024sparrow@gmail.com).
+If there are any problems, please write [HERE](https://github.com/1024sparrow/flash-git/issues/new) or to me personally by mail (1024sparrow@gmail.com).
 
 Copyright © 2020 Boris Vasilev. [License MIT](https://github.com/1024sparrow/flash-git/blob/master/LICENSE)
