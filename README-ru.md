@@ -80,4 +80,4 @@ $ sudo flash-git --device=/dev/sdb
 $ flash-git --help
 ```
 
-Copyright © 2020 Boris Vasilev. License MIT: <https://github.com/1024sparrow/flash-git/blob/master/LICENSE>
+Copyright © 2020 Boris Vasilev. [License MIT](https://github.com/1024sparrow/flash-git/blob/master/LICENSE)

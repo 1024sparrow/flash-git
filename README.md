@@ -50,7 +50,7 @@ Insert a flash drive. Do not mount it. Look at which device file your flash driv
 As root, run flash-git with the following arguments:
 > The first time the flash drive is initialized, it will be formatted. All data on it will be destroyed!
 ```bash
-$ sudo flash-git --device = / dev / sdb --alias = myFlash_00309 --repo-list = my-repositories
+$ sudo flash-git --device = /dev/sdb --alias=myFlash_00309 --repo-list=my-repositories
 ```
 The --alias option is required. This is the identifier of the flash drive, additional to its serial number. Allows you to see a more readable identifier than the serial number when displaying a list of registered flash drives. It is recommended to include the flash drive initialization date in *alias*: this will be useful when you reinitialize the flash drives (in order to transfer one local repository to another flash drive, you need to register the old one and reinitialize the old one - this is where it will be useful see the date of the current flash drive initialization)
 
@@ -58,4 +58,28 @@ During the first initialization, the list of paths to the repositories specified
 
 ## Initializing a flash drive for local repositories:
 
-When initializing local repositories, it checks for the presence of such directories in the file system
+When initializing local repositories, it checks for the presence of such directories in the file system. If at least one directory from the list of synchronized repositories already exists, flash-git will display a message about the problem and will not do anything.
+
+To initialize local repositories by flash drive, you need to run flash-git with the following arguments:
+```bash
+$ sudo flash-git --device=/dev/sdb --user=$USER --group=$USER
+```
+Local repositories will be cloned from the flash drive along the paths written to the flash drive when it is initialized.
+You can already work with these repositories.
+
+## Sync local repositories and flash drives
+
+To synchronize local repositories and flash drives, run flash-git with a single argument:
+```bash
+$ sudo flash-git --device=/dev/sdb
+```
+
+## Help and Support
+
+The utility allows you to bind a USB flash drive, untie the USB flash drive, list the registered USB flash drives, and also restore the lost USB flash drive (initialize the USB flash drive according to the registration data of another USB flash drive, after which the old USB flash drive will not work, but the new one will work).
+To see all flash-git options, run flash-git with the argument "--help":
+```bash
+$ flash-git --help
+```
+
+Copyright © 2020 Boris Vasilev. [License MIT](https://github.com/1024sparrow/flash-git/blob/master/LICENSE)
