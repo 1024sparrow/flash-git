@@ -1,7 +1,0 @@
-version 0:
-==========
-* LINUX only:
-    * using UDEV-RULES ;
-    * there's not home directory detecting, so if your repositories situated into home directory, you are limited in flash-git for only users with your username.
-* tests not work ;
-* without any logging .

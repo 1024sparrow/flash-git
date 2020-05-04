@@ -9,28 +9,6 @@ function _flashgit_module {
 		COMPREPLY=( $(compgen -W "$tmp" ) )
 		return
 		;;
-	--fake-device=*|--show-fake-device=*|--remove-fake-device=*|--fake-insert=*|--fake-release=*)
-		cur=${cur#*=}
-		if [ -d fakeDevices ]
-		then
-			pushd fakeDevices > /dev/null
-			tmp=$(ls ${cur}* -1)
-			popd > /dev/null
-		fi
-		COMPREPLY=( $(compgen -W "$tmp" ) )
-		return
-		;;
-	--sandbox=*|--show-sandbox=*|--remove-sandbox=*)
-		cur=${cur#*=}
-		if [ -d sandboxes ]
-		then
-			pushd sandboxes > /dev/null
-			tmp=$(ls ${cur}* -1)
-			popd > /dev/null
-		fi
-		COMPREPLY=( $(compgen -W "$tmp") )
-		return
-		;;
 	--user=*)
 		cur=${cur#*=}
 		tmp=$(cut -d: -f1 /etc/passwd | grep "$cur")

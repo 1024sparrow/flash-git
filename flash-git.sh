@@ -20,8 +20,14 @@ options:
 --help
     show this help
 
+--repo-list
+	set path to file with local repo-s path (needed by flash-drive initialization)
+
 --device=<xx>
     set flash-device xx. Sync device with local repositories if addon options is not set.
+
+--alias=<xx>
+	set alias for device. Alias is addon human-readable identifier for your device.
 
 --user=<user>
     set user to set new local repository ownership
