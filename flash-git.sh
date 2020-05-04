@@ -58,7 +58,7 @@ USAGE:
   show using devices and repositories:
   # flash-git --show-registered
 
-Copyright © 2020 Boris Vasilyev. License MIT: <https://github.com/1024sparrow/flash-git/blob/master/LICENSE>
+Copyright © 2020 Boris Vasilev. License MIT: <https://github.com/1024sparrow/flash-git/blob/master/LICENSE>
 "
 		exit 0
 	fi
