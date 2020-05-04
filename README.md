@@ -21,7 +21,7 @@ At the moment, the utility works only on Linux.
 
 In addition, this utility (version 0) has a number of limitations (due to bugs and deficiencies):
 * You can work only on Linux. Moreover, the flash drives created now will not work with future versions of flash-git (during the upgrade, it will require reinitialization of all the used flash drives; now the ext4 file system is used, which cannot be used in Windows, it is planned to switch to FAT-32 for synchronization of repositories on computers with different operating systems systems and with different file system support).
-* The involved local repositories can have any number of "git remote", but after registering the local repository in flash-git with git in those local repositories, "git pull" and "git push" can only be done under root. When flash-git is updated, the rights to the git service files will be restored.
+* The involved local repositories can have any number of "git remote", but after registering the local repository in flash-git with git in those local repositories, all git operations can be done only under root. When flash-git is updated, the rights to the git service files will be restored.
 * In the list of paths to local directories, if your local repository is somewhere in the bowels of the home directory, instead of "/ home / $ USER /", write "~ /". Auto-replacement of such things does not work now, and a user with a different name will have problems with read-write permissions during synchronization, since his home directory is in a different path.
 * To synchronize with a USB flash drive after insertion, you must also run "flash-git --device = <FILE-DEVICE-USB Flash Drive>". It was not possible to make synchronization automatic by using only "udev rules" (Linux-specific) when inserting a flash drive (problems arise when calling "git push"), but has not yet been implemented through a monitoring daemon.
 * You cannot sync more than 100 repositories through one USB flash drive.
@@ -81,5 +81,7 @@ To see all flash-git options, run flash-git with the argument "--help":
 ```bash
 $ flash-git --help
 ```
+
+If there are any problems, please write [HERE] (https://github.com/1024sparrow/flash-git/issues/new) or to me personally by mail (1024sparrow@gmail.com).
 
 Copyright © 2020 Boris Vasilev. [License MIT](https://github.com/1024sparrow/flash-git/blob/master/LICENSE)
