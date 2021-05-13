@@ -1,0 +1,2 @@
+-1. Change filesystem of media
+-2. Register in /etc/fstab - make be able mount without root privelegies
