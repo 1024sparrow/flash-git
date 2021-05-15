@@ -6,66 +6,75 @@
 source /usr/share/flash-git/flash-git__fs.sh
 source /usr/share/flash-git/flash-git__hw.sh
 
-if [ ! $(id -u) -eq 0 ]
-then
-	echo Run this under ROOT only!
-	exit 1
-fi
-
-tmpMounted=$(mktemp -d)
+#tmpMounted=$(mktemp -d)
+tmpMounted=/usr/share/flash-git/media
 tmpHardware=$(mktemp)
 tmpLog=$(mktemp)
 detectHardwareForMedia $1 $tmpHardware
-myMount $1 $tmpMounted
+#myMount $1 $tmpMounted
+mount $1
 #cp $tmpMounted/alias /home/boris/
 workdir=
+logPath=~/.flash-git.log # /usr/share/flash-git/log
 pushd /usr/share/flash-git
-for i in $(seq 100)
-do
-	if [ -d $i ]
-	then
-		if [[ $(cat $tmpMounted/alias) == $(cat $i/alias) ]] && cmp -s $tmpHardware $i/hardware
+	for i in $(seq 100)
+	do
+		if [ -d $i ]
 		then
-			if cmp -s $i/repos $tmpMounted/repos
+			echo 1111
+			cat $tmpMounted/alias
+			echo 2222
+			cat $i/alias
+			if [[ $(cat $tmpMounted/alias) == $(cat $i/alias) ]] && cmp -s $tmpHardware $i/hardware
 			then
-				workdir=/usr/share/flash-git/$i
-			else
-				echo "log about error"
+				if cmp -s $i/repos $tmpMounted/repos
+				then
+					workdir=/usr/share/flash-git/$i
+				else
+					echo "log about error"
+					cat $i/repos
+					echo "--"
+					cat $tmpMounted/repos
+				fi
+				break
 			fi
-			break
 		fi
-	fi
-done
+	done
 popd # /usr/share/flash-git
 
 if [ $workdir ]
 then
-	rm -rf $workdir/root
-	ln -s $tmpMounted/root $workdir/root # if do so git can not push ("can not create temporary file"). Make directory and copy instead.
-	echo >> /usr/share/flash-git/log
-	date >> /usr/share/flash-git/log
+	#rm -rf $workdir/root
+	#ln -s $tmpMounted/root $workdir/root # if do so git can not push ("can not create temporary file"). Make directory and copy instead.
+	echo >> "$logPath"
+	date >> "$logPath"
 	#ls -lh $workdir >> /usr/share/flash-git/log
 	while read -r line
 	do
+		branch=$(git rev-parse --abbrev-ref HEAD)
 		tmp="$line"
 		pushd "$tmp"
 		echo "
-$tmp:" >> /usr/share/flash-git/log
+$tmp:" >> "$logPath"
 		git pull flash-git &> $tmpLog
-		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
-		git push flash-git &> $tmpLog
-		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
+		echo "--1--"
+		cat $tmpLog >> "$logPath"; echo -n > $tmpLog
+		git push --set-upstream flash-git $branch &> $tmpLog
+		echo "--2--"
+		cat $tmpLog >> "$logPath"; echo -n > $tmpLog
 		git pull flash-git &> $tmpLog
-		cat $tmpLog >> /usr/share/flash-git/log; echo -n > $tmpLog
+		echo "--3--"
+		cat $tmpLog >> "$logPath"; echo -n > $tmpLog
 		popd # "$tmp"
 	done < $workdir/repos
-	rm $workdir/root
+	#ls -lh $workdir/root
+	#rm -rf $workdir/root
 else
 	echo "log about error"
 fi
 
-
-umount $tmpMounted
+umount $1
+#umount $tmpMounted
 rm tmpLog
 rm tmpHardware
-rm -rf tmpMounted
+#rm -rf tmpMounted

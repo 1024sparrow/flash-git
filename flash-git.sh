@@ -71,11 +71,13 @@ Copyright © 2020 Boris Vasilev. License MIT: <https://github.com/1024sparrow/fl
 	fi
 done
 
-if [ ! $(id -u) -eq 0 ]
-then
-	echo Run this under ROOT only!
-	exit 1
-fi
+function needRoot {
+	if [ ! $(id -u) -eq 0 ]
+	then
+		echo Run this under ROOT only!
+		exit 1
+	fi
+}
 
 allArgs=(
 	argFree
@@ -448,11 +450,13 @@ checkArguments
 
 if [ $argFree ]
 then
+	needRoot
 	echo "free media"
 	freeMedia
 	exit 0
 elif [ $argRestore ]
 then
+	needRoot
 	echo "restore media"
 	restoreMedia $argRestore $argAlias 1a2b334d
 	exit 0
@@ -463,6 +467,7 @@ then
 	exit 0
 elif [ $argDevice ] && [ $argRepoList ]
 then
+	needRoot
 	echo "initialize local repositories by media"
 	checkArgRepoList "$argRepoList"
 elif [ $argDevice ] && [ $argUser ] && [ $argGroup ]
@@ -521,53 +526,53 @@ else
 	detectHardwareForMedia $argDevice $tmpHardware
 fi
 pushd /usr/share/flash-git
-for i in $(seq 100)
-do
-	if [[ -d $i ]]
-	then
-		if [[ $argAlias == $(cat $i/alias) ]] && cmp -s $tmpHardware $i/hardware
+	for i in $(seq 100)
+	do
+		if [[ -d $i ]]
 		then
-			echo "this media already registered with such alias. Please unregiser registered previously or try another alias"
+			if [[ $argAlias == $(cat $i/alias) ]] && cmp -s $tmpHardware $i/hardware
+			then
+				echo "this media already registered with such alias. Please unregiser registered previously or try another alias"
+				exit 1
+			fi
+		fi
+	done
+
+	if [ "$argRepoList" ]
+	then
+		if ! checkRepolistAvailable $(realpath "$argRepoList")
+		then
+			echo "you already have registered media for at least one repository"
 			exit 1
 		fi
-	fi
-done
-
-if [ "$argRepoList" ]
-then
-	if ! checkRepolistAvailable $(realpath "$argRepoList")
-	then
-		echo "you already have registered media for at least one repository"
-		exit 1
-	fi
-else
-	#tmp=$(mktemp -d)
-	#myMount $argDevice $tmp && if ! checkRepolistAvailable $tmp/repos
-	mount $argDevice && if ! checkRepolistAvailable $mountDir/repos
-	then
+	else
+		#tmp=$(mktemp -d)
+		#myMount $argDevice $tmp && if ! checkRepolistAvailable $tmp/repos
+		mount $argDevice && if ! checkRepolistAvailable $mountDir/repos
+		then
+			umount $argDevice
+			echo "this media trails at least one repository you already have"
+			exit 1
+		fi
 		umount $argDevice
-		echo "this media trails at least one repository you already have"
-		exit 1
 	fi
-	umount $argDevice
-fi
 
-workdir=
-localId=-1
-for i in $(seq 100)
-do
-	if [[ ! -d $i ]]
-	then
-		mkdir $i
-		echo $argAlias > $i/alias
-		echo 0 > $i/flags
-		cp $tmpHardware $i/hardware
-		#chown boris $i/hardware
-		workdir=/usr/share/flash-git/$i
-		localId=$i
-		break
-	fi
-done
+	workdir=
+	localId=-1
+	for i in $(seq 100)
+	do
+		if [[ ! -d $i ]]
+		then
+			mkdir $i
+			echo $argAlias > $i/alias
+			echo 0 > $i/flags
+			cp $tmpHardware $i/hardware
+			chown boris $i/hardware
+			workdir=/usr/share/flash-git/$i
+			localId=$i
+			break
+		fi
+	done
 popd
 if [[ -z $workdir ]]
 then
@@ -582,30 +587,39 @@ then
 
 	rm -rf $workdir/root
 	mkdir $workdir/root
+	chown boris $workdir/root
 	echo -n > $workdir/repos
 	while read -r line
 	do
 		tmp="$line" # temporary stub. See lines below.
+
 		#tmp=$(realpath "$line") # get absolute path # boris e: resolve for $argUser
 		#if [[ $tmp == "$HOME/"* ]] # replace HomeDir for "~" # boris e: get $HOME for $argUser, not for root
 		#then
 		#	 t=${#HOME}
 		#	 tmp=~/${tmp:$t}
 		#fi
-		repopath=$workdir/root/$(basename $tmp).git # boris e: add check for repositories names are all unique
-		mkdir $repopath
-		git init --bare --shared=true "$repopath"
+
+		repopath=$mountDir/root/$(basename $tmp).git # boris e: add check for repositories names are all unique
+		mkdir $mountDir/root
+		chown boris $mountDir/root
+		echo 111
+		ls $mountDir/root
+		su boris -c "git init --bare --shared=true \"$repopath\""
+		echo 222
+		ls $repopath
 		pushd "$tmp"
-		git remote remove flash-git
-		git remote add flash-git "$repopath"
-		for branch in $(git branch | cut -c 3-)
-		do
-			git push --set-upstream flash-git "$branch"
-		done
-		git push flash-git
+			su boris -c "git remote remove flash-git"
+			su boris -c "git remote add flash-git \"$repopath\""
+			for branch in $(git branch | cut -c 3-)
+			do
+				su boris -c "git push --set-upstream flash-git \"$branch\""
+			done
+			#su boris -c "git push flash-git"
 		popd # "$tmp"
 	done < "$argRepoList"
 	cp -L "$argRepoList" $workdir/repos # dereferencing if it's a symbolyc link
+	mv $mountDir/* $workdir/
 	#echo $hostid > $workdir/root/hosts
 
 	#copy_flashgit_into_dir root
@@ -657,7 +671,7 @@ ${line}":
 		pushd "$tmp"
 		git remote rename origin flash-git
 		popd
-		chown -R $argUser "$tmp"
+		chown -R $argUser "$tmp" # boris here: не надо менять владение - надо делать из-под нужного пользователя
 		chgrp -R $argGroup "$tmp"
 	done < $workdir/repos
 	#echo $hostid >> root/hosts
