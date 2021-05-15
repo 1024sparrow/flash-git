@@ -481,6 +481,8 @@ fi
 	#
 #}
 
+readonly mountDir=/usr/share/flash-git/media
+
 hostid=$(hostid)
 if [[ ! -z "$argSandbox" ]]
 then
@@ -504,16 +506,17 @@ then
 else
 	if [[ -z "$argRepoList" ]]
 	then
-		prelmount=$(mktemp -d)
-		myMount $argDevice $prelmount
-		if [[ ! -r $prelmount/alias ]]
+		#prelmount=$(mktemp -d)
+		#myMount $argDevice $prelmount
+		mount $argDevice
+		if ! mount $argDevice || [[ ! -r $mountDir/alias ]]
 		then
 			echo "incorrect media..."
 			exit 1
 		fi
-		argAlias=$(cat $prelmount/alias)
-		umount $prelmount
-		rm -rf $prelmount
+		argAlias=$(cat $mountDir/alias)
+		umount $argDevice
+		#rm -rf $prelmount
 	fi
 	detectHardwareForMedia $argDevice $tmpHardware
 fi
@@ -538,15 +541,15 @@ then
 		exit 1
 	fi
 else
-	tmp=$(mktemp)
-	myMount $argDevice $tmp && if ! checkRepolistAvailable $tmp/repos
+	#tmp=$(mktemp -d)
+	#myMount $argDevice $tmp && if ! checkRepolistAvailable $tmp/repos
+	mount $argDevice && if ! checkRepolistAvailable $mountDir/repos
 	then
-		umount $tmp
+		umount $argDevice
 		echo "this media trails at least one repository you already have"
 		exit 1
 	fi
-	umount $tmp
-	rm -rf $tmp
+	umount $argDevice
 fi
 
 workdir=
@@ -559,6 +562,7 @@ do
 		echo $argAlias > $i/alias
 		echo 0 > $i/flags
 		cp $tmpHardware $i/hardware
+		#chown boris $i/hardware
 		workdir=/usr/share/flash-git/$i
 		localId=$i
 		break
@@ -612,16 +616,18 @@ then
 	rm -rf $workdir/root
 
 else
-	tempdir=$(mktemp -d)
-	myMount $argDevice $tempdir
-	cp -rf $tempdir/* $workdir/ # boris e
-	if [ $(cat $tempdir/flash_git_version) -gt $FLASH_GIT_VERSION ]
+	#tempdir=$(mktemp -d)
+	#myMount $argDevice $tempdir
+	mount $argDevice
+	cp -rf $mountDir/* $workdir/ # boris e
+	if [ $(cat $mountDir/flash_git_version) -gt $FLASH_GIT_VERSION ]
 	then
 		echo "you need to update flash-git to work with this device"
 		exit 1
 	fi
-	umount $tempdir
-	rm -rf $tempdir
+	umount $argDevice
+	#umount $tempdir
+	#rm -rf $tempdir
 
 	#if grep -Fxq $hostid root/hosts # if $hostid existen in root/hosts
 	#then
