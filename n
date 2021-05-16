@@ -1,0 +1,2 @@
+https://habr.com/ru/post/331240/
+https://dev.to/adarshkkumar/mount-a-volume-using-systemd-1h2f
