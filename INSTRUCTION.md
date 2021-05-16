@@ -35,7 +35,7 @@ WantedBy=multi-user.target
 Description=Automount Additional Drive
 
 [Automount]
-Where=/usr/share/flashgit/1234
+Where=/usr/share/flashgit/1
 
 [Install]
 WantedBy=multi-user.target
