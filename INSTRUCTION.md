@@ -22,8 +22,9 @@ Description=flashgit media with UUID="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 What=/dev/disk/by-uuid/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 Where=/usr/share/flashgit/1
 Type=ext4
-Options=defaults
+Options=user,rw,sync
 DirectoryMode=0755
+TimeoutSec=2
 
 [Install]
 WantedBy=multi-user.target
@@ -46,18 +47,26 @@ WantedBy=multi-user.target
 
 ## Настраиваем репозитории для работы с флешкой
 
-## Случай с не-bare репозиториями (т.е. которые созданы ```git init``` или ```git clone```)
+### Случай с не-bare репозиториями (т.е. которые созданы ```git init``` или ```git clone```)
 
 Пусть синхронизируемый репозиторий у нас лежит по пути ```/home/boris/repos/kuku```. Судя по имени, это не-bare репозиторий.
-Склонируем с него bare-репозиторий на примонтированной флешке.
+Склонируем с него bare-репозиторий на примонтированной флешке. Поскольку флешка у нас автоматически монтируется с рутовыми правами, то команды запускаем из-под рута:
 
 Заходим на флешку по пути ```/usr/share/flashgit/1```:
 ```bash
 git init --bare --shared=true kuku.git
+chown -R <USER> kuku.git
+chgrp -R <USER> kuku.git
 ```
-На флешке должнa появиться директория kuku.git .
+На флешке должнa появиться директория kuku.git, и теперь не надо быjть рутом, чтобы вносить изменения в этот репозиторий.
 
 Заходим в репозиторий, который надо будет синхронизировать.
+Если вы склонировали репозиторий откуда-то по сети, и хотите дальше пушить по умолчанию туда же, то делаем отдельный ```remote```
 ```bash
 git remote add flashgit /usr/share/flashgit/1/kuku.git
+```
+
+Если хотите пушить по умолчанию прямо на флешку, то
+```bash
+git remote add origin /usr/share/flashgit/1/kuku.git
 ```
