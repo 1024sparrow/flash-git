@@ -30,7 +30,7 @@ TimeoutSec=2
 WantedBy=multi-user.target
 ```
 
-```/etc/systemd/system/usr-share-flashgit-1.mount```:
+```/etc/systemd/system/usr-share-flashgit-1.automount```:
 ```
 Description=Automount Additional Drive
 
